@@ -3,6 +3,7 @@
 #include <stdlib.h>
 //#include <heap.h>
 #include <stdbool.h>
+#include "heap.h";
 
 #define MY_BUFFER_SIZE sizeOf(record)
 
@@ -246,12 +247,6 @@ void merge_sort(int i, int j, int a[], int aux[]) {
         a[k] = aux[k];
     }
 }
-
-
-
-
-
-
 
 
 int main(){

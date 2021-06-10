@@ -1,169 +1,249 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
-#define HEAP_SIZE 12
+#define LCHILD(x) 2 * x + 1
+#define RCHILD(x) 2 * x + 2
+#define PARENT(x) (x - 1) / 2
 
-//building a min-heap
-typedef struct heap{
-	int data[HEAP_SIZE + 1];  //the body of the heap
-	int total_elements; //the current number of elements in the heap
-}heap;
+typedef struct node {
+    int id;
+    int index;
+} node ;
 
-void heap_insert(heap *heap, int x);
-void heap_init(heap *heap);
-void make_heap(heap *heap, int s[], int n);
-void print_heap(heap *heap);
-int get_minimum(heap *heap);
-int get_parent(int n);
-int young_child(int n);
-int remove_minimum(heap *heap);
-void bubble_up(heap *heap, int total_elements);
-void bubble_down(heap *heap, int index);
-void heap_insert(heap *heap, int x);
+typedef struct minHeap {
+    int size ;
+    node *elem ;
+} minHeap ;
 
 
-void heap_init(heap *heap){
-	heap -> total_elements = 0;
-	int i;
-	int len = sizeof(heap -> data)/sizeof(int);
-
-	for(i = 0; i < len; i++){
-		heap -> data[i] = 0;
-	}
-}
-
-void make_heap(heap *heap, int s[], int n){
-	int i; //counter
-	//initialize the heap
-	heap_init(heap);
-	//insert the elements into the heap
-	for(i = 0; i < n; i++){
-		heap_insert(heap,s[i]);
-	}
+/*
+    Function to initialize the min heap with size = 0
+*/
+minHeap initMinHeap(int size) {
+    minHeap hp ;
+    hp.size = 0 ;
+    return hp ;
 }
 
 
-void print_heap(heap *heap){
-	int i;
-	int elements = heap -> total_elements;
-
-	for(i = 1; i <= elements; i++){
-		printf("ELEMENT[%d]: %d\n",i,heap -> data[i]);
-	}
+/*
+    Function to swap data within two nodes of the min heap using pointers
+*/
+void swap(node *n1, node *n2) {
+    node temp = *n1 ;
+    *n1 = *n2 ;
+    *n2 = temp ;
 }
 
-int get_minimum(heap *heap){
-	return heap -> data[1];
+
+/*
+    Heapify function is used to make sure that the heap property is never violated
+    In case of deletion of a node, or creating a min heap from an array, heap property
+    may be violated. In such cases, heapify function can be called to make sure that
+    heap property is never violated
+*/
+void heapify(minHeap *hp, int i) {
+    int smallest = (LCHILD(i) < hp->size && hp->elem[LCHILD(i)].id < hp->elem[i].id) ? LCHILD(i) : i ;
+    if(RCHILD(i) < hp->size && hp->elem[RCHILD(i)].id < hp->elem[smallest].id) {
+        smallest = RCHILD(i) ;
+    }
+    if(smallest != i) {
+        swap(&(hp->elem[i]), &(hp->elem[smallest])) ;
+        heapify(hp, smallest) ;
+    }
 }
 
-//returns the index of the parent (if any) of the index n
-int get_parent(int n){
-	return n == 1 ? -1 : (int)(n/2);
 
-}
-//returns the index of the younger child
-int young_child(int n){
-	return 2*n;
-}
+/* 
+    Build a Min Heap given an array of numbers
+    Instead of using insertNode() function n times for total complexity of O(nlogn),
+    we can use the buildMinHeap() function to build the heap in O(n) time
+*/
+void buildMinHeap(minHeap *hp, int *arr, int size) {
+    int i ;
 
-int remove_minimum(heap *heap){
-	int min = -1;
+    // Insertion into the heap without violating the shape property
+    for(i = 0; i < size; i++) {
+        if(hp->size) {
+            hp->elem = realloc(hp->elem, (hp->size + 1) * sizeof(node)) ;
+        } else {
+            hp->elem = malloc(sizeof(node)) ;
+        }
+        node nd ;
+        nd.id = arr[i] ;
+        hp->elem[(hp->size)++] = nd ;
+    }
 
-	if(heap -> total_elements <= 0)
-		printf("EMPTY HEAP!");
-
-	else{
-		//the root is the minimum element
-		min = heap -> data[1];
-		//replace the element at the top with last element in the heap
-		heap -> data[1] = heap -> data[heap -> total_elements];
-		//reduce the total elements in the heap
-		heap -> total_elements -= 1;
-		bubble_down(heap,1);
-	}
-	return min;
-}
-
-//bubbles down an element into it's proper place in the heap
-void bubble_down(heap *heap, int p){
-	int c; //child index
-	int i; //counter
-	int min_index; //index of lightest child
-
-	c = young_child(p);
-	min_index = p;
-
-	for(i = 0; i < 2; i++){
-		if(c + i <= heap -> total_elements){
-			//check to see if the data at min_index is larger than the data at the child
-			if(heap -> data[min_index] > heap -> data[c+i]){
-				min_index = c + i;
-			}
-		}
-	}
-
-	if(min_index != p){
-		//swap the elements
-		int temp_variable = heap -> data[p];
-		heap -> data[p] = heap -> data[min_index];
-		heap -> data[min_index] = temp_variable;
-		//call bubble down
-		bubble_down(heap, min_index);
-	}
+    // Making sure that heap property is also satisfied
+    for(i = (hp->size - 1) / 2; i >= 0; i--) {
+        heapify(hp, i) ;
+    }
 }
 
-//bubbles up the last element of the heap to maintain heap structure
-/**
-* *heap: pointer to the heap
-* total_elements: the total elements in the heap
-**/
-void bubble_up(heap *heap, int index){
-	//if we are at the root of the heap, no parent
-	if(get_parent(index) == -1)
-		return;
 
-	//if the parent node has a larger data value, we need to bubble up
-	if(heap -> data[get_parent(index)] > heap -> data[index]){
-		//swap the elements
-		int temp_variable = heap -> data[get_parent(index)];
-		heap -> data[get_parent(index)] = heap -> data[index];
-		heap -> data[index] = temp_variable;
-		//call the bubble up function to the new parent
-		bubble_up(heap, get_parent(index));
-	}
+/*
+    Function to insert a node into the min heap, by allocating space for that node in the
+    heap and also making sure that the heap property and shape propety are never violated.
+*/
+void insertNode(minHeap *hp, struct node node) {
+    if(hp->size) {
+        hp->elem = realloc(hp->elem, (hp->size + 1) * sizeof(node)) ;
+    } else {
+        hp->elem = malloc(sizeof(node)) ;
+    }
+    int i = (hp->size)++ ;
+    while(i && node.id < hp->elem[PARENT(i)].id) {
+        hp->elem[i] = hp->elem[PARENT(i)] ;
+        i = PARENT(i) ;
+    }
+    hp->elem[i] = node ;
 }
 
-void heap_insert(heap *heap, int x){
-	//if the heap is already full
-	if(heap -> total_elements >= HEAP_SIZE)
-		printf("WARNING: HEAP OVERFLOW ERROR!\n");
 
-	else{
-		//increment the number of elements in the heap
-		heap -> total_elements += 1;
-		//insert the data value into the left most position in the heap
-		heap -> data[heap -> total_elements] = x;
-		//put in appropriate position by bubbling up
-		bubble_up(heap, heap -> total_elements);
-
-	}
+/*
+    Function to delete a node from the min heap
+    It shall remove the root node, and place the last node in its place
+    and then call heapify function to make sure that the heap property
+    is never violated
+*/
+void deleteNode(minHeap *hp) {
+    if(hp->size) {
+        printf("Deleting node %d\n\n", hp->elem[0].id) ;
+        hp->elem[0] = hp->elem[--(hp->size)] ;
+        hp->elem = realloc(hp->elem, hp->size * sizeof(node)) ;
+        heapify(hp, 0) ;
+    } else {
+        printf("\nMin Heap is empty!\n") ;
+        free(hp->elem) ;
+    }
 }
 
-int main(int argc, char const *argv[]){
-	heap *my_heap = malloc(sizeof(heap));
 
-	heap_init(my_heap);
+/*
+    Function to get maximum node from a min heap
+    The maximum node shall always be one of the leaf nodes. So we shall recursively
+    move through both left and right child, until we find their maximum nodes, and
+    compare which is larger. It shall be done recursively until we get the maximum
+    node
+*/
+int getMaxNode(minHeap *hp, int i) {
+    if(LCHILD(i) >= hp->size) {
+        return hp->elem[i].id ;
+    }
 
-	int my_elements[] = {7,34,31,49,55};
-	
-	int numberOfElement = sizeof(my_elements) / sizeof(int);
-	
+    int l = getMaxNode(hp, LCHILD(i)) ;
+    int r = getMaxNode(hp, RCHILD(i)) ;
 
-	make_heap(my_heap,my_elements,5);
-	print_heap(my_heap);
-	printf("%d\n",get_minimum(my_heap));
-	remove_minimum(my_heap);
-	print_heap(my_heap);
-	printf("%d\n",my_heap -> total_elements);
-	free(my_heap);
+    if(l >= r) {
+        return l ;
+    } else {
+        return r ;
+    }
 }
+
+
+/*
+    Function to clear the memory allocated for the min heap
+*/
+void deleteMinHeap(minHeap *hp) {
+    free(hp->elem) ;
+}
+
+
+/*
+    Function to display all the nodes in the min heap by doing a inorder traversal
+*/
+void inorderTraversal(minHeap *hp, int i) {
+    if(LCHILD(i) < hp->size) {
+        inorderTraversal(hp, LCHILD(i)) ;
+    }
+    printf("%d ", hp->elem[i].id) ;
+    if(RCHILD(i) < hp->size) {
+        inorderTraversal(hp, RCHILD(i)) ;
+    }
+}
+
+
+/*
+    Function to display all the nodes in the min heap by doing a preorder traversal
+*/
+void preorderTraversal(minHeap *hp, int i) {
+    if(LCHILD(i) < hp->size) {
+        preorderTraversal(hp, LCHILD(i)) ;
+    }
+    if(RCHILD(i) < hp->size) {
+        preorderTraversal(hp, RCHILD(i)) ;
+    }
+    printf("%d ", hp->elem[i].id) ;
+}
+
+
+/*
+    Function to display all the nodes in the min heap by doing a post order traversal
+*/
+void postorderTraversal(minHeap *hp, int i) {
+    printf("%d ", hp->elem[i].id) ;
+    if(LCHILD(i) < hp->size) {
+        postorderTraversal(hp, LCHILD(i)) ;
+    }
+    if(RCHILD(i) < hp->size) {
+        postorderTraversal(hp, RCHILD(i)) ;
+    }
+}
+
+
+/*
+    Function to display all the nodes in the min heap by doing a level order traversal
+*/
+void levelorderTraversal(minHeap *hp) {
+    int i ;
+    for(i = 0; i < hp->size; i++) {
+        printf("%d ", hp->elem[i].id) ;
+    }
+}
+
+// int main(){
+//     struct minHeap hp = initMinHeap(50);
+//     int i;
+
+//     node n1,n2,n3,n4,n5,n6,n7;
+//     n1.id = 3;
+//     n1.index=0;
+
+//     n2.id =1;
+//     n2.index=1;
+
+//     n3.id=9;
+//     n3.index=2;
+
+//     n4.id = 13;
+//     n4.index = 3;
+
+//     n5.id = 5;
+//     n5.index = 4;
+
+//     n6.id =51;
+//     n6.index = 5;
+
+//     n7.id = 2;
+//     n7.index = 6;
+
+
+
+//     insertNode(&hp,n1);
+//     insertNode(&hp,n2);
+//     insertNode(&hp,n3);
+//     insertNode(&hp,n4);
+
+//     insertNode(&hp,n5);
+//     insertNode(&hp,n6);
+//     insertNode(&hp,n7);    
+
+//     levelorderTraversal(&hp);
+//     deleteNode(&hp);
+//     levelorderTraversal(&hp);
+//     deleteNode(&hp);
+//     levelorderTraversal(&hp);
+//     return -1;
+// }
