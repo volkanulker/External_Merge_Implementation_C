@@ -321,238 +321,7 @@ void levelorderTraversal(minHeap *hp) {
 // }
 
 
-
-struct _MultiIndex{
-    int id;
-    int index;
-};
-
-
-int findNumberOfRecord(char* fileName){
-    FILE *fp;
-    struct _Record rec;
-    int count= 0;
-    char chr;
-
-    fp = fopen(fileName,"r");
-
-    if (fp == NULL)
-    {
-      perror("Error while opening the file.\n");
-      return -1;
-    }
-
-    //extract character from file and store in chr
-    chr = getc(fp);
-
-   for (chr = getc(fp); chr != EOF; chr = getc(fp))
-        if (chr == '\n') // Increment count if this character is newline
-            count = count + 1;
-    //printf("There are %d lines in %s  in a file\n", count, fileName);
-    fclose(fp);
-    // decrease count by one because first line is a header line
-    return count - 1;
-}
-
-
-int readFile(char* fileName){
-    FILE *fp;
-    struct _Record rec;
-    struct _MultiIndex multiIndex;
-
-    fp = fopen(fileName,"r");
-
-    int numberOfRecord = findNumberOfRecord(fileName);
-
-
-     int i;
-
-    for (i = 0; i < numberOfRecord; ++i)
-    {
-        fread(&rec, sizeof(struct _Record), 1, fp);
-
-        multiIndex.id = rec.id;
-        multiIndex.index = i;
-
-        printf("%d \n", rec.id);
-
-        //printf("%d \n",i);
-    }
-
-    fclose(fp);
-    return -1;
-}
-
-
-// Function to find how many record can be added to a buffer
-int getNumbOfRecordToAdd(int pageSize){
-    // we can find that each record is 64 bit 
-    // input given in kb format so we can multiply with 1000
-    // and divide with 64 byte to find number of record to added.
-    return pageSize * 1000 / 64;
-
-}
-
-
-// void writeToBuffer(int indexOfBuffer, struct _Record arr_rec[], int sizeOfArray){
-   
-//     char *fileName;
-//     sprintf(fileName,"buffer%d.bin",indexOfBuffer);
-//     FILE *fp = fopen(fileName, "wb");
-//     if (fp != NULL) {
-//         int i=0;
-//         for (i = 0; i < sizeOfArray; i++)
-//         {
-//             fwrite(&arr_rec[i], sizeof(struct _Record), 1, fp);
-//         }
-        
-       
-//         fclose(fp);
-//     }
-
-// }
-
-void writeToBuffer(int indexOfBuffer, minHeap* minHeap, int sizeOfHeap){
-   
-    char *fileName;
-    sprintf(fileName,"buffer%d.bin",indexOfBuffer);
-    struct _Record rec;
-    FILE *fp = fopen(fileName, "wb");
-    if (fp != NULL) {
-        int i=0;
-        for (i = 0; i < sizeOfHeap; i++)
-        {
-            
-            rec = deleteNode(minHeap);
-            //printf("%d %s %s %s %d \n",rec.id,rec.name,rec.surname,rec.email,rec.grade);
-            fwrite(&rec, sizeof(struct _Record), 1, fp);
-        }
-        
-       
-        fclose(fp);
-    }
-
-}
-
-void readFromABuffer(char* fileName){
-    FILE *fp = fopen(fileName,"rb");
-    int pageSize = 8;
-    int numberOfRecordToAdd = getNumbOfRecordToAdd(pageSize);
-    struct _Record arr_rec[numberOfRecordToAdd];
-   
-    fread(&arr_rec, sizeof(struct _Record), numberOfRecordToAdd, fp);
-    int i = 0;
-    for ( i = 0; i < numberOfRecordToAdd; i++)
-    {
-       printf("%d %s %s %s %d\n",arr_rec[i].id,arr_rec[i].name,arr_rec[i].surname,arr_rec[i].email,arr_rec[i].grade);
-    }
-
-    fclose(fp);
-    
-}
-
-
-
-void getSplittedLine(char* line, char* array[]){
-    char* splitted;
-    splitted = strtok(line, ";");
-    int i=0;
-    while (splitted != NULL)//Read the data of each row
-    {
-        array[i++] = splitted;
-        //printf("%s ", splitted);//Print out every data read
-        splitted = strtok(NULL, ";");
-    }
-
-} 
-
-
-void readIntoRecord(struct _Record* rec, char* array[]){
-    rec->id = atoi(array[0]);
-    strcpy(rec->name,array[1]);
-    strcpy(rec->surname,array[2]);
-    strcpy(rec->email,array[3]);
-    rec->grade = atoi(array[4]);
-    //return rec;
-}
-
-
-int readCSV(char* fileName){
-    
-    FILE *fp = NULL;
-	char *line;
-	char lineBuffer[1024];
-    bool isFirstLine = true;
-    int counter = 0;
-    struct _Record rec;
-    struct _MultiIndex multiIndex;
-   
-
-    char *array[4];
-
-    int numberOfBuffer = 5;
-    int pageSize = 8;
-    int bufferIndex = 1;
-    int numberOfRecordToAdd = getNumbOfRecordToAdd(pageSize);
-    struct _Record arr_rec[numberOfRecordToAdd];
-
-    minHeap heap = initMinHeap(numberOfRecordToAdd);
-    
-
-	if ((fp = fopen(fileName, "at+")) != NULL)
-	{
-		 while ((line = fgets(lineBuffer, sizeof(lineBuffer), fp))!=NULL)//The loop continues when the end of the file is not read
-		{
-            // if reader reads first line skip that line
-            if(isFirstLine){
-                isFirstLine = false;
-                continue;
-            }
-            // split line and add into array
-            getSplittedLine(line,array);
-            //Read splitted line into record
-            rec.id = atoi(array[0]);
-            strcpy(rec.name,array[1]);
-            strcpy(rec.surname,array[2]);
-            strcpy(rec.email,array[3]);
-            rec.grade = atoi(array[4]);
-            //readIntoRecord(&rec,array);
-            //Add records to record array
-            //rec = readIntoRecord(rec,array);
-
-            // Create record array
-            arr_rec[counter % numberOfRecordToAdd] = rec;
-            // Create multi index
-            // multiIndex.id = rec.id;
-            // multiIndex.index = counter;
-
-            //<----------- Replacement Selection Sort -------------->
-            // create node for heap
-            struct node node;
-            node.record = rec;
-            insertNode(&heap,node);
-            counter += 1;
-            if(counter % numberOfRecordToAdd == 0){
-                //levelorderTraversal(&heap);
-                writeToBuffer(bufferIndex,&heap,numberOfRecordToAdd);
-                //writeToBuffer(bufferIndex,arr_rec,numberOfRecordToAdd);
-                bufferIndex += 1;
-                if(bufferIndex == 5){
-                    // merge files and add to output buffer
-                    bufferIndex = 1;
-                    break;
-                }
-            }  
-            //printf("%d %s %s %s %d",rec.id,rec.name,rec.surname,rec.email,rec.grade);
-			//printf("\n");   
-		 }
-		fclose(fp);
-		fp = NULL;
-    }
-}
-
-
-
+//<---------------------------------------- MERGE OPERATIONS ------------------------------------>
 // function to sort the subsection a[i .. j] of the array a[]
 // Merges two subarrays of arr[].
 // First subarray is arr[l..m]
@@ -631,94 +400,265 @@ void printArray(struct _Record recordArr[], int size)
         printf("%d,", recordArr[i].id);
     printf("\n");
 }
- 
 
+
+// struct _MultiIndex{
+//     int id;
+//     int index;
+// };
+
+// function to find number of records in given csv file
+int findNumberOfRecord(char* fileName){
+    FILE *fp;
+    struct _Record rec;
+    int count= 0;
+    char chr;
+
+    fp = fopen(fileName,"r");
+
+    if (fp == NULL)
+    {
+      perror("Error while opening the file.\n");
+      return -1;
+    }
+
+    //extract character from file and store in chr
+    chr = getc(fp);
+
+   for (chr = getc(fp); chr != EOF; chr = getc(fp))
+        if (chr == '\n') // Increment count if this character is newline
+            count = count + 1;
+    //printf("There are %d lines in %s  in a file\n", count, fileName);
+    fclose(fp);
+    // decrease count by one because first line is a header line
+    return count - 1;
+}
+
+
+// Function to find how many record can be added to a buffer
+int getNumbOfRecordToAdd(int pageSize){
+    // we can find that each record is 64 bit 
+    // input given in kb format so we can multiply with 1000
+    // and divide with 64 byte to find number of record to added.
+    return pageSize * 1000 / 64;
+
+}
+
+// method to write merged records into output buffer
+void writeMergedRecs(int indexOfBuffer, struct _Record arr_rec[], int sizeOfArray,int seekByte){
+   
+    char *fileName = (char*)malloc(11 * sizeof(char));;
+    sprintf(fileName,"%s%d%s","buffer",indexOfBuffer,".bin");
+    //sprintf(fileName,"buffer5.bin",indexOfBuffer);
+    FILE *fp = fopen(fileName, "ab+");
+    fseek(fp,seekByte,SEEK_SET);
+    struct _Record rec;
+    if (fp != NULL) {
+        int i;
+        for (i = 0; i < sizeOfArray; i++)
+        {
+            rec = arr_rec[i];   
+            fwrite(&arr_rec[i], sizeof(struct _Record), 1, fp);
+        }
+        fclose(fp);
+    }
+}
+
+
+// write records that sorted with replacement sort to buffers
+void writeRSortedToBuffer(int indexOfBuffer, minHeap* minHeap, int sizeOfHeap){
+    char *fileName = (char*)malloc(11 * sizeof(char));;
+    sprintf(fileName,"%s%d%s","buffer",indexOfBuffer,".bin");
+    struct _Record rec;
+    FILE *fp = fopen(fileName, "wb");
+    if (fp != NULL) {
+        int i=0;
+        for (i = 0; i < sizeOfHeap; i++)
+        {
+            
+            rec = deleteNode(minHeap);
+            //printf("%d %s %s %s %d \n",rec.id,rec.name,rec.surname,rec.email,rec.grade);
+            fwrite(&rec, sizeof(struct _Record), 1, fp);
+        }
+        
+       
+        fclose(fp);
+    }
+
+}
+
+
+// void readFromABuffer(char* fileName){
+//     FILE *fp = fopen(fileName,"rb");
+//     int pageSize = 8;
+//     int numberOfRecordToAdd = getNumbOfRecordToAdd(pageSize);
+//     struct _Record arr_rec[numberOfRecordToAdd];
+   
+//     fread(&arr_rec, sizeof(struct _Record), numberOfRecordToAdd, fp);
+//     int i = 0;
+//     for ( i = 0; i < numberOfRecordToAdd*2; i++)
+//        printf("%d %s %s %s %d\n",arr_rec[i].id,arr_rec[i].name,arr_rec[i].surname,arr_rec[i].email,arr_rec[i].grade);
+
+//     fclose(fp);
+// }
+
+
+
+//TODO: Number of recordu dinamik hale getir
+void readFromOutputBuffer(char* fileName){
+    FILE *fp = fopen(fileName,"rb");
+    int pageSize = 8;
+    int numberOfRecordToAdd = getNumbOfRecordToAdd(pageSize);
+    struct _Record arr_rec[numberOfRecordToAdd*2];
+   
+    fread(&arr_rec, sizeof(struct _Record), numberOfRecordToAdd*2, fp);
+    int i = 0;
+    for ( i = 0; i < numberOfRecordToAdd*2; i++)
+       printf("%d %s %s %s %d\n",arr_rec[i].id,arr_rec[i].name,arr_rec[i].surname,arr_rec[i].email,arr_rec[i].grade);
+
+    fclose(fp);
+}
+
+// read records from a buffer and read them into an array
+void readRecordsIntoArray(struct _Record recordArr[], int startIdx,int lastIdx, FILE *fp){
+    int i;
+    for ( i = startIdx; i < lastIdx; i++)
+        fread(&recordArr[i], sizeof(struct _Record), 1, fp);
+    
+    fclose(fp);
+}
+
+
+//TODO: Dosya bitene kadar okuma yapacak hale getir
+// take two buffer inputs merge and write them into output buffer 
+void mergeBuffers(char* bufferName1, char* bufferName2){
+    
+    int pageSize = 8;
+    int numberOfRecordToAdd = getNumbOfRecordToAdd(pageSize);
+    struct _Record arr_rec[numberOfRecordToAdd];
+
+    FILE *fp = fopen(bufferName1,"rb");
+    readRecordsIntoArray(arr_rec,0,numberOfRecordToAdd/2,fp);
+    fp = fopen(bufferName2,"rb");
+    readRecordsIntoArray(arr_rec,numberOfRecordToAdd/2,numberOfRecordToAdd,fp);
+    mergeSort(arr_rec,0,numberOfRecordToAdd - 1);
+    writeMergedRecs(5,arr_rec,numberOfRecordToAdd,0);
+
+    fp = fopen(bufferName1,"rb");
+    fseek(fp, sizeof(struct _Record)*((int)numberOfRecordToAdd/2), SEEK_SET);
+    readRecordsIntoArray(arr_rec,0,numberOfRecordToAdd/2,fp);
+    fp = fopen(bufferName2,"rb");
+    fseek(fp, sizeof(struct _Record)*((int)numberOfRecordToAdd/2), SEEK_SET);
+    readRecordsIntoArray(arr_rec,numberOfRecordToAdd/2,numberOfRecordToAdd,fp);
+    mergeSort(arr_rec,0,numberOfRecordToAdd - 1);
+    writeMergedRecs(5,arr_rec,numberOfRecordToAdd,sizeof(struct _Record)*((int)numberOfRecordToAdd));
+    
+}
+
+
+// method to split a csv line
+void getSplittedLine(char* line, char* array[]){
+    char* splitted;
+    splitted = strtok(line, ";");
+    int i=0;
+    while (splitted != NULL)//Read the data of each row
+    {
+        array[i++] = splitted;
+        //printf("%s ", splitted);//Print out every data read
+        splitted = strtok(NULL, ";");
+    }
+} 
+
+// Method to read splitted csv line into struct record
+void readIntoRecord(struct _Record* rec, char* array[]){
+    rec->id = atoi(array[0]);
+    strcpy(rec->name,array[1]);
+    strcpy(rec->surname,array[2]);
+    strcpy(rec->email,array[3]);
+    rec->grade = atoi(array[4]);
+}
+
+// core function does so many things
+int readCSV(char* fileName){
+    
+    FILE *fp = NULL;
+	char *line;
+	char lineBuffer[1024];
+    bool isFirstLine = true;
+    int counter = 0;
+    struct _Record rec;
+    //struct _MultiIndex multiIndex;
+   
+
+    char *array[4];
+
+    int numberOfBuffer = 5;
+    int pageSize = 8;
+    int bufferIndex = 1;
+    int numberOfRecordToAdd = getNumbOfRecordToAdd(pageSize);
+    struct _Record arr_rec[numberOfRecordToAdd];
+
+    minHeap heap = initMinHeap(numberOfRecordToAdd);
+    
+
+	if ((fp = fopen(fileName, "at+")) != NULL)
+	{
+		 while ((line = fgets(lineBuffer, sizeof(lineBuffer), fp))!=NULL)//The loop continues when the end of the file is not read
+		{
+            // if reader reads first line skip that line
+            if(isFirstLine){
+                isFirstLine = false;
+                continue;
+            }
+            // split line and add into array
+            getSplittedLine(line,array);
+            //Read splitted line into record
+            rec.id = atoi(array[0]);
+            strcpy(rec.name,array[1]);
+            strcpy(rec.surname,array[2]);
+            strcpy(rec.email,array[3]);
+            rec.grade = atoi(array[4]);
+            //readIntoRecord(&rec,array);
+            //Add records to record array
+            //rec = readIntoRecord(rec,array);
+
+            // Create record array
+            arr_rec[counter % numberOfRecordToAdd] = rec;
+            // Create multi index
+            // multiIndex.id = rec.id;
+            // multiIndex.index = counter;
+
+            //<----------- Replacement Selection Sort -------------->
+            // create node for heap
+            struct node node;
+            node.record = rec;
+            insertNode(&heap,node);
+            counter += 1;
+            if(counter % numberOfRecordToAdd == 0){
+                //levelorderTraversal(&heap);
+                writeRSortedToBuffer(bufferIndex,&heap,numberOfRecordToAdd);
+                //writeToBuffer(bufferIndex,arr_rec,numberOfRecordToAdd);
+                bufferIndex += 1;
+                if(bufferIndex == 5){
+                    // merge files and add to output buffer
+                    bufferIndex = 1;
+                    break;
+                }
+            }  
+            //printf("%d %s %s %s %d",rec.id,rec.name,rec.surname,rec.email,rec.grade);
+			//printf("\n");   
+		 }
+		fclose(fp);
+		fp = NULL;
+    }
+}
 
 int main(){
-    struct _Record r1, r2, r3, r4, r5, r6;
 
-    r1.id=3;
-    r2.id=5;
-    r3.id=1;
-    r4.id = 17;
-    r5.id=4;
-    r6.id = 33;
-    struct _Record recordArr[]= {r1,r2,r3,r4,r5,r6};
-
-    int arr_size = sizeof(recordArr) / sizeof(recordArr[0]);
- 
-    printf("Given array is \n");
-    printArray(recordArr, arr_size);
- 
-    mergeSort(recordArr, 0, arr_size - 1);
- 
-    printf("\nSorted array is \n");
-    printArray(recordArr, arr_size);
-
-
-
-
-    //readCSV("students1.csv");
-    // minHeap heap = initMinHeap();
-    // struct _Record rec;
-    // readFromABuffer("buffer1.bin");
-    // readFromABuffer("buffer2.bin");
-    // readFromABuffer("buffer3.bin");
-    // readFromABuffer("buffer4.bin");
-
-
-
-  
-    //readCSV("students1.csv");
-    // readFromABuffer("buffer1.bin");
-    // readFromABuffer("buffer2.bin");
-    // readFromABuffer("buffer3.bin");
-    // readFromABuffer("buffer4.bin");
-
-    // minHeap minHeap = initMinHeap(50);
-    // struct _Record rec;
-
-    // struct _Record r1, r2, r3, r4, r5, r6;
-
-    // r1.id=3;
-    // r2.id=5;
-    // r3.id=1;
-    // r4.id = 17;
-    // r5.id=4;
-    // r6.id = 33;
-    // node n1,n2,n3,n4,n5,n6;
-
-    // n1.record =r1;
-    // n2.record =r2;
-    // n3.record =r3;
-    // n4.record =r4;
-    // n5.record =r5;
-    // n6.record =r6;
-
-
-    // insertNode(&minHeap,n1);
-    // insertNode(&minHeap,n2);
-    // insertNode(&minHeap,n3);
-    // insertNode(&minHeap,n4);
-    // insertNode(&minHeap,n5);
-    // insertNode(&minHeap,n6);
-  
-
-    // levelorderTraversal(&minHeap);
-
-    // rec = deleteNode(&minHeap);
-    // printf("%d \n",rec.id);
-
-    // levelorderTraversal(&minHeap);
-
-    // rec = deleteNode(&minHeap);
-    // printf("%d \n",rec.id);
-
-
-
+    mergeBuffers("buffer1.bin","buffer2.bin");
+    readFromOutputBuffer("buffer5.bin");
 
     return -1;
-
 }
 
 
