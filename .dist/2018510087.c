@@ -121,17 +121,20 @@ void insertNode(minHeap *hp, struct node node) {
     is never violated
 */
 struct _Record deleteNode(minHeap *hp) {
+    struct _Record saved;
     if(hp->size) {
-        struct _Record saved;
         saved = hp->elem[0].record;
-        printf("Deleting node %d\n\n", hp->elem[0].record.id) ;
+
         hp->elem[0] = hp->elem[--(hp->size)] ;
         hp->elem = realloc(hp->elem, hp->size * sizeof(node)) ;
         heapify(hp, 0) ;
+        //printf("%d %s %s %s %d",saved.id,saved.name,saved.surname,saved.email,saved.grade);
         return saved;
+        
     } else {
         printf("\nMin Heap is empty!\n") ;
-        free(hp->elem) ;
+        free(hp->elem);
+        return saved; 
     }
 }
 
@@ -215,7 +218,7 @@ void postorderTraversal(minHeap *hp, int i) {
 void levelorderTraversal(minHeap *hp) {
     int i ;
     for(i = 0; i < hp->size; i++) {
-        printf("%d ", hp->elem[i].record.id) ;
+        printf("%d %s %s %s %d", hp->elem[i].record.id, hp->elem[i].record.name, hp->elem[i].record.surname, hp->elem[i].record.email, hp->elem[i].record.grade) ;
     }
 }
 //<------------------------------------------QUEUE IMPLEMENTATION-------------------------------------------------------->
@@ -391,37 +394,16 @@ int getNumbOfRecordToAdd(int pageSize){
 }
 
 
-int writeToBuffer(int indexOfBuffer, struct _Record arr_rec[], int sizeOfArray){
-   
-    char *fileName;
-    sprintf(fileName,"buffer%d.bin",indexOfBuffer);
-    FILE *fp = fopen(fileName, "wb");
-    if (fp != NULL) {
-        int i=0;
-        for (i = 0; i < sizeOfArray; i++)
-        {
-            fwrite(&arr_rec[i], sizeof(struct _Record), 1, fp);
-        }
-        
-       
-        fclose(fp);
-    }
-
-}
-
-// int writeToBuffer(int indexOfBuffer, minHeap minHeap, int sizeOfHeap){
+// void writeToBuffer(int indexOfBuffer, struct _Record arr_rec[], int sizeOfArray){
    
 //     char *fileName;
 //     sprintf(fileName,"buffer%d.bin",indexOfBuffer);
-//     struct _Record rec;
 //     FILE *fp = fopen(fileName, "wb");
 //     if (fp != NULL) {
 //         int i=0;
-//         for (i = 0; i < sizeOfHeap; i++)
+//         for (i = 0; i < sizeOfArray; i++)
 //         {
-
-//             rec = deleteNode(&minHeap);
-//             fwrite(&rec, sizeof(struct _Record), 1, fp);
+//             fwrite(&arr_rec[i], sizeof(struct _Record), 1, fp);
 //         }
         
        
@@ -430,11 +412,29 @@ int writeToBuffer(int indexOfBuffer, struct _Record arr_rec[], int sizeOfArray){
 
 // }
 
+void writeToBuffer(int indexOfBuffer, minHeap* minHeap, int sizeOfHeap){
+   
+    char *fileName;
+    sprintf(fileName,"buffer%d.bin",indexOfBuffer);
+    struct _Record rec;
+    FILE *fp = fopen(fileName, "wb");
+    if (fp != NULL) {
+        int i=0;
+        for (i = 0; i < sizeOfHeap; i++)
+        {
+            
+            rec = deleteNode(minHeap);
+            //printf("%d %s %s %s %d \n",rec.id,rec.name,rec.surname,rec.email,rec.grade);
+            fwrite(&rec, sizeof(struct _Record), 1, fp);
+        }
+        
+       
+        fclose(fp);
+    }
 
+}
 
-
-
-int readFromABuffer(char* fileName){
+void readFromABuffer(char* fileName){
     FILE *fp = fopen(fileName,"rb");
     int pageSize = 8;
     int numberOfRecordToAdd = getNumbOfRecordToAdd(pageSize);
@@ -533,8 +533,9 @@ int readCSV(char* fileName){
             insertNode(&heap,node);
             counter += 1;
             if(counter % numberOfRecordToAdd == 0){
-                //writeToBuffer(bufferIndex,heap,numberOfRecordToAdd);
-                writeToBuffer(bufferIndex,arr_rec,numberOfRecordToAdd);
+                //levelorderTraversal(&heap);
+                writeToBuffer(bufferIndex,&heap,numberOfRecordToAdd);
+                //writeToBuffer(bufferIndex,arr_rec,numberOfRecordToAdd);
                 bufferIndex += 1;
                 if(bufferIndex == 5){
                     // merge files and add to output buffer
@@ -594,13 +595,23 @@ void merge_sort(int i, int j, int a[], int aux[]) {
 
 int main(){
 
- 
-  
-    readCSV("students1.csv");
+
+    //readCSV("students1.csv");
+    // minHeap heap = initMinHeap();
+    // struct _Record rec;
     readFromABuffer("buffer1.bin");
     readFromABuffer("buffer2.bin");
     readFromABuffer("buffer3.bin");
     readFromABuffer("buffer4.bin");
+
+
+
+  
+    //readCSV("students1.csv");
+    // readFromABuffer("buffer1.bin");
+    // readFromABuffer("buffer2.bin");
+    // readFromABuffer("buffer3.bin");
+    // readFromABuffer("buffer4.bin");
 
     // minHeap minHeap = initMinHeap(50);
     // struct _Record rec;
