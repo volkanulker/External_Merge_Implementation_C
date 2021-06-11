@@ -554,55 +554,117 @@ int readCSV(char* fileName){
 
 
 // function to sort the subsection a[i .. j] of the array a[]
-void merge_sort(int i, int j, int a[], int aux[]) {
-    if (j <= i) {
-        return;     // the subsection is empty or a single element
-    }
-    int mid = (i + j) / 2;
-
-    // left sub-array is a[i .. mid]
-    // right sub-array is a[mid + 1 .. j]
-    
-    merge_sort(i, mid, a, aux);     // sort the left sub-array recursively
-    merge_sort(mid + 1, j, a, aux);     // sort the right sub-array recursively
-
-    int pointer_left = i;       // pointer_left points to the beginning of the left sub-array
-    int pointer_right = mid + 1;        // pointer_right points to the beginning of the right sub-array
-    int k;      // k is the loop counter
-
-    // we loop from i to j to fill each element of the final merged array
-    for (k = i; k <= j; k++) {
-        if (pointer_left == mid + 1) {      // left pointer has reached the limit
-            aux[k] = a[pointer_right];
-            pointer_right++;
-        } else if (pointer_right == j + 1) {        // right pointer has reached the limit
-            aux[k] = a[pointer_left];
-            pointer_left++;
-        } else if (a[pointer_left] < a[pointer_right]) {        // pointer left points to smaller element
-            aux[k] = a[pointer_left];
-            pointer_left++;
-        } else {        // pointer right points to smaller element
-            aux[k] = a[pointer_right];
-            pointer_right++;
+// Merges two subarrays of arr[].
+// First subarray is arr[l..m]
+// Second subarray is arr[m+1..r]
+void merge(struct _Record recordArr[], int l, int m, int r)
+{
+    int i, j, k;
+    int n1 = m - l + 1;
+    int n2 = r - m;
+ 
+    /* create temp arrays */
+    struct _Record L[n1], R[n2];
+ 
+    /* Copy data to temp arrays L[] and R[] */
+    for (i = 0; i < n1; i++)
+        L[i] = recordArr[l + i];
+    for (j = 0; j < n2; j++)
+        R[j] = recordArr[m + 1 + j];
+ 
+    /* Merge the temp arrays back into arr[l..r]*/
+    i = 0; // Initial index of first subarray
+    j = 0; // Initial index of second subarray
+    k = l; // Initial index of merged subarray
+    while (i < n1 && j < n2) {
+        if (L[i].id <= R[j].id) {
+            recordArr[k] = L[i];
+            i++;
         }
+        else {
+            recordArr[k] = R[j];
+            j++;
+        }
+        k++;
     }
-
-    for (k = i; k <= j; k++) {      // copy the elements from aux[] to a[]
-        a[k] = aux[k];
+ 
+    /* Copy the remaining elements of L[], if there
+    are any */
+    while (i < n1) {
+        recordArr[k] = L[i];
+        i++;
+        k++;
+    }
+ 
+    /* Copy the remaining elements of R[], if there
+    are any */
+    while (j < n2) {
+        recordArr[k] = R[j];
+        j++;
+        k++;
+    }
+}
+ 
+/* l is for left index and r is right index of the
+sub-array of arr to be sorted */
+void mergeSort(struct _Record recordArr[], int l, int r)
+{
+    if (l < r) {
+        // Same as (l+r)/2, but avoids overflow for
+        // large l and h
+        int m = l + (r - l) / 2;
+ 
+        // Sort first and second halves
+        mergeSort(recordArr, l, m);
+        mergeSort(recordArr, m + 1, r);
+ 
+        merge(recordArr, l, m, r);
     }
 }
 
+/* UTILITY FUNCTIONS */
+/* Function to print an array */
+void printArray(struct _Record recordArr[], int size)
+{
+    int i;
+    for (i = 0; i < size; i++)
+        printf("%d,", recordArr[i].id);
+    printf("\n");
+}
+ 
+
 
 int main(){
+    struct _Record r1, r2, r3, r4, r5, r6;
+
+    r1.id=3;
+    r2.id=5;
+    r3.id=1;
+    r4.id = 17;
+    r5.id=4;
+    r6.id = 33;
+    struct _Record recordArr[]= {r1,r2,r3,r4,r5,r6};
+
+    int arr_size = sizeof(recordArr) / sizeof(recordArr[0]);
+ 
+    printf("Given array is \n");
+    printArray(recordArr, arr_size);
+ 
+    mergeSort(recordArr, 0, arr_size - 1);
+ 
+    printf("\nSorted array is \n");
+    printArray(recordArr, arr_size);
+
+
 
 
     //readCSV("students1.csv");
     // minHeap heap = initMinHeap();
     // struct _Record rec;
-    readFromABuffer("buffer1.bin");
-    readFromABuffer("buffer2.bin");
-    readFromABuffer("buffer3.bin");
-    readFromABuffer("buffer4.bin");
+    // readFromABuffer("buffer1.bin");
+    // readFromABuffer("buffer2.bin");
+    // readFromABuffer("buffer3.bin");
+    // readFromABuffer("buffer4.bin");
 
 
 
