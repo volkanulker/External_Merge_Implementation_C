@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <limits.h>
 //#include <heap.h>
 #include <stdbool.h>
-//#include "heap.h"
 
 #define LCHILD(x) 2 * x + 1
 #define RCHILD(x) 2 * x + 2
@@ -19,6 +19,7 @@ struct _Record
     int grade;
 };
 
+//<------------------------------------------ HEAP IMPLEMENTATION ---------------------------------------->
 
 typedef struct node {
     struct _Record record;
@@ -33,7 +34,7 @@ typedef struct minHeap {
 /*
     Function to initialize the min heap with size = 0
 */
-minHeap initMinHeap(int size) {
+minHeap initMinHeap() {
     minHeap hp ;
     hp.size = 0 ;
     return hp ;
@@ -48,7 +49,6 @@ void swap(node *n1, node *n2) {
     *n1 = *n2 ;
     *n2 = temp ;
 }
-
 
 /*
     Heapify function is used to make sure that the heap property is never violated
@@ -120,12 +120,15 @@ void insertNode(minHeap *hp, struct node node) {
     and then call heapify function to make sure that the heap property
     is never violated
 */
-void deleteNode(minHeap *hp) {
+struct _Record deleteNode(minHeap *hp) {
     if(hp->size) {
+        struct _Record saved;
+        saved = hp->elem[0].record;
         printf("Deleting node %d\n\n", hp->elem[0].record.id) ;
         hp->elem[0] = hp->elem[--(hp->size)] ;
         hp->elem = realloc(hp->elem, hp->size * sizeof(node)) ;
         heapify(hp, 0) ;
+        return saved;
     } else {
         printf("\nMin Heap is empty!\n") ;
         free(hp->elem) ;
@@ -215,7 +218,104 @@ void levelorderTraversal(minHeap *hp) {
         printf("%d ", hp->elem[i].record.id) ;
     }
 }
+//<------------------------------------------QUEUE IMPLEMENTATION-------------------------------------------------------->
 
+
+
+/* a link in the queue, holds the info and point to the next Node*/
+// typedef struct {
+//     int info;
+// } DATA;
+
+// typedef struct Node_t {
+//     struct _Record data;
+//     struct Node_t *prev;
+// } NODE;
+
+// /* the HEAD of the Queue, hold the amount of node's that are in the queue*/
+// typedef struct Queue {
+//     NODE *head;
+//     NODE *tail;
+//     int size;
+//     int limit;
+// } Queue;
+
+// Queue *ConstructQueue(int limit);
+// void DestructQueue(Queue *queue);
+// int Enqueue(Queue *pQueue, NODE *item);
+// NODE *Dequeue(Queue *pQueue);
+// int isEmpty(Queue* pQueue);
+
+// Queue *ConstructQueue(int limit) {
+//     Queue *queue = (Queue*) malloc(sizeof (Queue));
+//     if (queue == NULL) {
+//         return NULL;
+//     }
+//     if (limit <= 0) {
+//         limit = 65535;
+//     }
+//     queue->limit = limit;
+//     queue->size = 0;
+//     queue->head = NULL;
+//     queue->tail = NULL;
+
+//     return queue;
+// }
+
+// void DestructQueue(Queue *queue) {
+//     NODE *pN;
+//     while (!isEmpty(queue)) {
+//         pN = Dequeue(queue);
+//         free(pN);
+//     }
+//     free(queue);
+// }
+
+// int Enqueue(Queue *pQueue, NODE *item) {
+//     /* Bad parameter */
+//     if ((pQueue == NULL) || (item == NULL)) {
+//         return false;
+//     }
+//     // if(pQueue->limit != 0)
+//     if (pQueue->size >= pQueue->limit) {
+//         return false;
+//     }
+//     /*the queue is empty*/
+//     item->prev = NULL;
+//     if (pQueue->size == 0) {
+//         pQueue->head = item;
+//         pQueue->tail = item;
+
+//     } else {
+//         /*adding item to the end of the queue*/
+//         pQueue->tail->prev = item;
+//         pQueue->tail = item;
+//     }
+//     pQueue->size++;
+//     return true;
+// }
+
+// NODE * Dequeue(Queue *pQueue) {
+//     /*the queue is empty or bad param*/
+//     NODE *item;
+//     if (isEmpty(pQueue))
+//         return NULL;
+//     item = pQueue->head;
+//     pQueue->head = (pQueue->head)->prev;
+//     pQueue->size--;
+//     return item;
+// }
+
+// int isEmpty(Queue* pQueue) {
+//     if (pQueue == NULL) {
+//         return false;
+//     }
+//     if (pQueue->size == 0) {
+//         return true;
+//     } else {
+//         return false;
+//     }
+// }
 
 
 
@@ -245,13 +345,10 @@ int findNumberOfRecord(char* fileName){
    for (chr = getc(fp); chr != EOF; chr = getc(fp))
         if (chr == '\n') // Increment count if this character is newline
             count = count + 1;
-    
     //printf("There are %d lines in %s  in a file\n", count, fileName);
-
     fclose(fp);
     // decrease count by one because first line is a header line
     return count - 1;
-
 }
 
 
@@ -278,11 +375,6 @@ int readFile(char* fileName){
 
         //printf("%d \n",i);
     }
-    
-
-
-    
-
 
     fclose(fp);
     return -1;
@@ -317,6 +409,31 @@ int writeToBuffer(int indexOfBuffer, struct _Record arr_rec[], int sizeOfArray){
 
 }
 
+// int writeToBuffer(int indexOfBuffer, minHeap minHeap, int sizeOfHeap){
+   
+//     char *fileName;
+//     sprintf(fileName,"buffer%d.bin",indexOfBuffer);
+//     struct _Record rec;
+//     FILE *fp = fopen(fileName, "wb");
+//     if (fp != NULL) {
+//         int i=0;
+//         for (i = 0; i < sizeOfHeap; i++)
+//         {
+
+//             rec = deleteNode(&minHeap);
+//             fwrite(&rec, sizeof(struct _Record), 1, fp);
+//         }
+        
+       
+//         fclose(fp);
+//     }
+
+// }
+
+
+
+
+
 int readFromABuffer(char* fileName){
     FILE *fp = fopen(fileName,"rb");
     int pageSize = 8;
@@ -335,15 +452,42 @@ int readFromABuffer(char* fileName){
 }
 
 
+
+void getSplittedLine(char* line, char* array[]){
+    char* splitted;
+    splitted = strtok(line, ";");
+    int i=0;
+    while (splitted != NULL)//Read the data of each row
+    {
+        array[i++] = splitted;
+        //printf("%s ", splitted);//Print out every data read
+        splitted = strtok(NULL, ";");
+    }
+
+} 
+
+
+void readIntoRecord(struct _Record* rec, char* array[]){
+    rec->id = atoi(array[0]);
+    strcpy(rec->name,array[1]);
+    strcpy(rec->surname,array[2]);
+    strcpy(rec->email,array[3]);
+    rec->grade = atoi(array[4]);
+    //return rec;
+}
+
+
 int readCSV(char* fileName){
     
     FILE *fp = NULL;
-	char *line,*splitted;
+	char *line;
 	char lineBuffer[1024];
     bool isFirstLine = true;
     int counter = 0;
     struct _Record rec;
     struct _MultiIndex multiIndex;
+   
+
     char *array[4];
 
     int numberOfBuffer = 5;
@@ -352,8 +496,8 @@ int readCSV(char* fileName){
     int numberOfRecordToAdd = getNumbOfRecordToAdd(pageSize);
     struct _Record arr_rec[numberOfRecordToAdd];
 
-    // heap *my_heap = malloc(sizeof(heap));
-    // heap_init(my_heap);
+    minHeap heap = initMinHeap(numberOfRecordToAdd);
+    
 
 	if ((fp = fopen(fileName, "at+")) != NULL)
 	{
@@ -364,47 +508,43 @@ int readCSV(char* fileName){
                 isFirstLine = false;
                 continue;
             }
-			splitted = strtok(line, ";");
-            int i=0;
-			while (splitted != NULL)//Read the data of each row
-			{
-                array[i++] = splitted;
-				//printf("%s ", splitted);//Print out every data read
-				splitted = strtok(NULL, ";");
-			}
-            
-            // Read into _Record rec
+            // split line and add into array
+            getSplittedLine(line,array);
+            //Read splitted line into record
             rec.id = atoi(array[0]);
             strcpy(rec.name,array[1]);
             strcpy(rec.surname,array[2]);
             strcpy(rec.email,array[3]);
             rec.grade = atoi(array[4]);
-            // Add records to record array
-            arr_rec[counter % numberOfRecordToAdd] = rec;
+            //readIntoRecord(&rec,array);
+            //Add records to record array
+            //rec = readIntoRecord(rec,array);
 
+            // Create record array
+            arr_rec[counter % numberOfRecordToAdd] = rec;
             // Create multi index
-            multiIndex.id = rec.id;
-            multiIndex.index = counter;
+            // multiIndex.id = rec.id;
+            // multiIndex.index = counter;
+
+            //<----------- Replacement Selection Sort -------------->
+            // create node for heap
+            struct node node;
+            node.record = rec;
+            insertNode(&heap,node);
             counter += 1;
             if(counter % numberOfRecordToAdd == 0){
-               
-                writeToBuffer(1,arr_rec,numberOfRecordToAdd);
+                //writeToBuffer(bufferIndex,heap,numberOfRecordToAdd);
+                writeToBuffer(bufferIndex,arr_rec,numberOfRecordToAdd);
                 bufferIndex += 1;
-                if(bufferIndex == 4){
-                    bufferIndex = 0;
+                if(bufferIndex == 5){
+                    // merge files and add to output buffer
+                    bufferIndex = 1;
+                    break;
                 }
-                
-                
-            }
-            
+            }  
             //printf("%d %s %s %s %d",rec.id,rec.name,rec.surname,rec.email,rec.grade);
-            
-
-			printf("\n");
-            
+			//printf("\n");   
 		 }
-       
-        
 		fclose(fp);
 		fp = NULL;
     }
@@ -454,51 +594,57 @@ void merge_sort(int i, int j, int a[], int aux[]) {
 
 int main(){
 
-    //readFile("students1.csv");
-    //readCSV("students1.csv");
-    // readCSV("students1.csv");
-    // readFromABuffer("buffer1.bin");
-    // return 0;
+ 
+  
+    readCSV("students1.csv");
+    readFromABuffer("buffer1.bin");
+    readFromABuffer("buffer2.bin");
+    readFromABuffer("buffer3.bin");
+    readFromABuffer("buffer4.bin");
+
+    // minHeap minHeap = initMinHeap(50);
+    // struct _Record rec;
+
+    // struct _Record r1, r2, r3, r4, r5, r6;
+
+    // r1.id=3;
+    // r2.id=5;
+    // r3.id=1;
+    // r4.id = 17;
+    // r5.id=4;
+    // r6.id = 33;
+    // node n1,n2,n3,n4,n5,n6;
+
+    // n1.record =r1;
+    // n2.record =r2;
+    // n3.record =r3;
+    // n4.record =r4;
+    // n5.record =r5;
+    // n6.record =r6;
 
 
-    minHeap minHeap = initMinHeap(50);
-
-    struct _Record r1, r2, r3, r4, r5, r6;
-
-    r1.id=3;
-    r2.id=5;
-    r3.id=1;
-    r4.id = 17;
-    r5.id=4;
-    r6.id = 33;
-    node n1,n2,n3,n4,n5,n6;
-
-    n1.record =r1;
-    n2.record =r2;
-    n3.record =r3;
-    n4.record =r4;
-    n5.record =r5;
-    n6.record =r6;
-
-
-    insertNode(&minHeap,n1);
-    insertNode(&minHeap,n2);
-    insertNode(&minHeap,n3);
-    insertNode(&minHeap,n4);
-    insertNode(&minHeap,n5);
-    insertNode(&minHeap,n6);
+    // insertNode(&minHeap,n1);
+    // insertNode(&minHeap,n2);
+    // insertNode(&minHeap,n3);
+    // insertNode(&minHeap,n4);
+    // insertNode(&minHeap,n5);
+    // insertNode(&minHeap,n6);
   
 
-    levelorderTraversal(&minHeap);
+    // levelorderTraversal(&minHeap);
 
-    deleteNode(&minHeap);
+    // rec = deleteNode(&minHeap);
+    // printf("%d \n",rec.id);
 
-    levelorderTraversal(&minHeap);
+    // levelorderTraversal(&minHeap);
+
+    // rec = deleteNode(&minHeap);
+    // printf("%d \n",rec.id);
 
 
 
 
-    
+    return -1;
 
 }
 
