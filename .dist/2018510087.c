@@ -346,13 +346,13 @@ int getNumbOfRecordToAdd(int pageSize){
 }
 
 // method to write merged records into output buffer
-void writeMergedRecs(int indexOfBuffer, struct _Record arr_rec[], int sizeOfArray){
+void writeMergedRecs(int chunkFileIdx, struct _Record arr_rec[], int sizeOfArray){
    
     char *fileName = (char*)malloc(11 * sizeof(char));;
-    sprintf(fileName,"%s%d%s","buffer",indexOfBuffer,".bin");
+    sprintf(fileName,"%s%d%s","chunk",chunkFileIdx,".bin");
     //sprintf(fileName,"buffer5.bin",indexOfBuffer);
-    FILE *fp = fopen(fileName, "ab+");
-    fseek(fp,0,SEEK_END);
+    FILE *fp = fopen(fileName, "wb");
+    //fseek(fp,0,SEEK_END);
     struct _Record rec;
     if (fp != NULL) {
         int i;
@@ -381,8 +381,7 @@ void writeRSortedToBuffer(int indexOfBuffer, minHeap* minHeap, int sizeOfHeap){
             //printf("%d %s %s %s %d \n",rec.id,rec.name,rec.surname,rec.email,rec.grade);
             fwrite(&rec, sizeof(struct _Record), 1, fp);
         }
-        
-       
+ 
         fclose(fp);
     }
 
@@ -419,41 +418,52 @@ void readRecordsIntoArray(struct _Record recordArr[], int startIdx,int lastIdx, 
 
 //TODO: Dosya bitene kadar okuma yapacak hale getir
 // take two buffer inputs merge and write them into output buffer 
-void mergeBuffers(char* bufferName1, char* bufferName2){
+void mergeBuffers(char* bufferName1, char* bufferName2,int chunkFileIdx){
     
     int pageSize = 8;
     int numberOfRecordToAdd = getNumbOfRecordToAdd(pageSize);
     struct _Record arr_rec[numberOfRecordToAdd];
     FILE *fp = fopen(bufferName1,"rb");
-    // Read first half of first buffer
+    //Read first half of first buffer
     readRecordsIntoArray(arr_rec,0,numberOfRecordToAdd/2,fp);
     fp = fopen(bufferName2,"rb");
-     // Read first half of second buffer
+    //Read first half of second buffer
     readRecordsIntoArray(arr_rec,numberOfRecordToAdd/2,numberOfRecordToAdd,fp);
-    // merge these records
+    //merge these records
     mergeSort(arr_rec,0,numberOfRecordToAdd - 1);
-    // write merged records to output buffer (buffer5)
-    writeMergedRecs(5,arr_rec,numberOfRecordToAdd);
+    //write merged records to output buffer (buffer5)
+    writeMergedRecs(chunkFileIdx,arr_rec,numberOfRecordToAdd);
 
     
-    // number of byte to reach second half of buffer
+    //number of byte to reach second half of buffer
     int byteToSeek =  sizeof(struct _Record)*((int)numberOfRecordToAdd/2);
     fp = fopen(bufferName1,"rb");
-    // seek to middle of the first buffer
+    //seek to middle of the first buffer
     fseek(fp,byteToSeek, SEEK_SET);
-    // read records into array
+    //read records into array
     readRecordsIntoArray(arr_rec,0,numberOfRecordToAdd/2,fp);
     fp = fopen(bufferName2,"rb");
-    // seek to middle of the second buffer
+    //seek to middle of the second buffer
     fseek(fp,byteToSeek, SEEK_SET);
-    // read records into array
+    //read records into array
     readRecordsIntoArray(arr_rec,numberOfRecordToAdd/2,numberOfRecordToAdd,fp);
-    // merge records
+    //merge records
     mergeSort(arr_rec,0,numberOfRecordToAdd - 1);
-    // write merged records to output buffer
-    writeMergedRecs(5,arr_rec,numberOfRecordToAdd);
-    
+    //write merged records to output buffer
+    writeMergedRecs(chunkFileIdx,arr_rec,numberOfRecordToAdd);
 }
+
+int findIndexOfDeletedNode(struct _Record arr[],struct _Record rec,int sizeOfArray){
+    int i;
+    for (i = 0; i < sizeOfArray; i++)
+    {
+        if(arr[i].id == rec.id){
+            return i;
+        }
+    }
+    return -1;
+}
+
 
 
 // method to split a csv line
@@ -489,7 +499,14 @@ void readFromOutputBuffer(char* fileName){
     int numberOfByte = ftell(fp);
     fseek(fp,0,SEEK_SET);
     int numbOfRecord = numberOfByte / sizeOfRecord;
-    printf("%d",numbOfRecord);
+    //printf("%d",numbOfRecord);
+    int i;
+    for (i = 0; i < numbOfRecord; i++)
+    {
+        fread(&rec,sizeof(struct _Record),1,fp);
+        printf("%d %s %s %s %d  \n",rec.id,rec.name,rec.surname,rec.email,rec.grade);
+    }
+    
     // int i;
     // for (i = 0; i < numbOfRecord; i++)
     // {
@@ -572,6 +589,77 @@ void readFromOutputBuffer(char* fileName){
 //     fclose(out);
 // }
 
+// int findWhichFile(struct _Record recArr[], struct _Record rec, int numberOfFile){
+//     int i;
+//     for (i = 1; i < numberOfFile+1; i++)
+//     {
+//        if(recArr[i].id == rec.id){
+//            return 
+//        }
+//     }
+    
+
+// }
+
+// void externalMerge(int numberOfFile){
+//     FILE* filePointers[numberOfFile];
+    
+//     char *fileName = (char*)malloc(12 * sizeof(char));
+//     FILE *outputFile=fopen("output.bin","wb");
+//     struct _Record rec;
+//     struct node recNode;
+    
+//     int i;
+//     for (i = 1; i < numberOfFile+1; i++)
+//     {
+//         sprintf(fileName,"%s%d%s","buffer",i,".bin");
+        
+//         filePointers[i-1]= fopen(fileName,"rb");
+//     }
+//     // fread(&rec,sizeof(struct _Record),1,filePointers[0]);
+//     // printf("%d %s %s %s %d \n",rec.id,rec.name,rec.surname,rec.email,rec.grade);
+
+//     minHeap heap = initMinHeap();
+//     struct _Record recArr[numberOfFile];
+//     int k;
+//     for (k = 0; k < numberOfFile; k++)
+//     {
+//         fread(&rec,sizeof(struct _Record),1,filePointers[k]);
+//         recNode.record = rec;
+//         recArr[k] = rec;
+//         insertNode(&heap,recNode);
+        
+//     }
+
+//     for ( i = 0; i < 50; i++)
+//     {
+//        rec = deleteNode(&heap);
+//        fread(&rec,sizeof(struct _Record),1,filePointers[k]);
+//        printf("%d %s %s %s %d \n",rec.id,rec.name,rec.surname,rec.email,rec.grade);
+
+//     }
+    
+    
+
+    
+    
+
+
+//     // sprintf(fileName,"%s%d%s","buffer",1,".bin");
+//     // filePointers[0]= fopen(fileName,"rb");
+//     // sprintf(fileName,"%s%d%s","buffer",2,".bin");
+//     // filePointers[1]= fopen(fileName,"rb");
+//     // sprintf(fileName,"%s%d%s","buffer",3,".bin");
+//     // filePointers[2]= fopen(fileName,"rb");
+//     // sprintf(fileName,"%s%d%s","buffer",4,".bin");
+//     // filePointers[3]= fopen(fileName,"rb");
+
+//     // fread(&rec,sizeof(struct _Record),1,filePointers[0]);
+//     // printf("%d %s %s %s %d \n",rec.id,rec.name,rec.surname,rec.email,rec.grade);
+    
+    
+
+// }
 
 
 // core function does so many things
@@ -588,7 +676,7 @@ int readCSV(char* fileName){
     char *array[5];
     int numberOfBuffer = 5;
     int pageSize = 8;
-    int bufferIndex = 1;
+    int bufferIndex = 0;
     int numberOfRecordToAdd = getNumbOfRecordToAdd(pageSize);
     struct _Record arr_rec[numberOfRecordToAdd];
 
@@ -635,10 +723,10 @@ int readCSV(char* fileName){
                 
                 writeRSortedToBuffer(bufferIndex,&heap,numberOfRecordToAdd);
                 bufferIndex += 1;
-                if(bufferIndex == 5){
-                    mergeBuffers("buffer1.bin","buffer2.bin");
-                    mergeBuffers("buffer3.bin","buffer4.bin");
-                    bufferIndex = 1;     
+                if(bufferIndex == 4){
+                    mergeBuffers("buffer0.bin","buffer1.bin",1);
+                    mergeBuffers("buffer2.bin","buffer3.bin",2);
+                    bufferIndex = 0;     
                 }
             }  
             //printf("%d %s %s %s %d",rec.id,rec.name,rec.surname,rec.email,rec.grade);
@@ -650,8 +738,18 @@ int readCSV(char* fileName){
 }
 
 int main(){
+    //externalMerge(4);
+    //readFromOutputBuffer("output.bin");
+    //readFromOutputBuffer("sortedFile.bin");
     //readCSV("students.csv");
-    readFromOutputBuffer("buffer5.bin");
+    readFromOutputBuffer("buffer0.bin");
+    readFromOutputBuffer("buffer1.bin");
+    readFromOutputBuffer("buffer2.bin");
+    readFromOutputBuffer("buffer3.bin");
+    //readFromOutputBuffer("chunk1.bin");
+    // readFromOutputBuffer("chunk2.bin");
+   
+    //readFromOutputBuffer("chunk1.bin");
     
     //readFromOutputBuffer("buffer5.bin");
     //mergeBuffers("buffer1.bin","buffer2.bin");
