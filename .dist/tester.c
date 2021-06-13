@@ -221,94 +221,113 @@ void levelorderTraversal(minHeap *hp) {
         printf("%d %s %s %s %d", hp->elem[i].record.id, hp->elem[i].record.name, hp->elem[i].record.surname, hp->elem[i].record.email, hp->elem[i].record.grade) ;
     }
 }
-
-//<---------------------------------------- MERGE OPERATIONS ------------------------------------>
-// function to sort the subsection a[i .. j] of the array a[]
-// Merges two subarrays of arr[].
-// First subarray is arr[l..m]
-// Second subarray is arr[m+1..r]
-void merge(struct _Record recordArr[], int l, int m, int r)
-{
-    int i, j, k;
-    int n1 = m - l + 1;
-    int n2 = r - m;
- 
-    /* create temp arrays */
-    struct _Record L[n1], R[n2];
- 
-    /* Copy data to temp arrays L[] and R[] */
-    for (i = 0; i < n1; i++)
-        L[i] = recordArr[l + i];
-    for (j = 0; j < n2; j++)
-        R[j] = recordArr[m + 1 + j];
- 
-    /* Merge the temp arrays back into arr[l..r]*/
-    i = 0; // Initial index of first subarray
-    j = 0; // Initial index of second subarray
-    k = l; // Initial index of merged subarray
-    while (i < n1 && j < n2) {
-        if (L[i].id <= R[j].id) {
-            recordArr[k] = L[i];
-            i++;
-        }
-        else {
-            recordArr[k] = R[j];
-            j++;
-        }
-        k++;
-    }
- 
-    /* Copy the remaining elements of L[], if there
-    are any */
-    while (i < n1) {
-        recordArr[k] = L[i];
-        i++;
-        k++;
-    }
- 
-    /* Copy the remaining elements of R[], if there
-    are any */
-    while (j < n2) {
-        recordArr[k] = R[j];
-        j++;
-        k++;
-    }
-}
- 
-/* l is for left index and r is right index of the
-sub-array of arr to be sorted */
-void mergeSort(struct _Record recordArr[], int l, int r)
-{
-    if (l < r) {
-        // Same as (l+r)/2, but avoids overflow for
-        // large l and h
-        int m = l + (r - l) / 2;
- 
-        // Sort first and second halves
-        mergeSort(recordArr, l, m);
-        mergeSort(recordArr, m + 1, r);
- 
-        merge(recordArr, l, m, r);
-    }
-}
-
-/* UTILITY FUNCTIONS */
-/* Function to print an array */
-void printArray(struct _Record recordArr[], int size)
-{
-    int i;
-    for (i = 0; i < size; i++)
-        printf("%d,", recordArr[i].id);
-    printf("\n");
-}
+//<------------------------------------------QUEUE IMPLEMENTATION-------------------------------------------------------->
 
 
-// struct _MultiIndex{
-//     int id;
-//     int index;
-// };
 
-// function to find number of records in given csv file
+/* a link in the queue, holds the info and point to the next Node*/
+// typedef struct {
+//     int info;
+// } DATA;
+
+// typedef struct Node_t {
+//     struct _Record data;
+//     struct Node_t *prev;
+// } NODE;
+
+// /* the HEAD of the Queue, hold the amount of node's that are in the queue*/
+// typedef struct Queue {
+//     NODE *head;
+//     NODE *tail;
+//     int size;
+//     int limit;
+// } Queue;
+
+// Queue *ConstructQueue(int limit);
+// void DestructQueue(Queue *queue);
+// int Enqueue(Queue *pQueue, NODE *item);
+// NODE *Dequeue(Queue *pQueue);
+// int isEmpty(Queue* pQueue);
+
+// Queue *ConstructQueue(int limit) {
+//     Queue *queue = (Queue*) malloc(sizeof (Queue));
+//     if (queue == NULL) {
+//         return NULL;
+//     }
+//     if (limit <= 0) {
+//         limit = 65535;
+//     }
+//     queue->limit = limit;
+//     queue->size = 0;
+//     queue->head = NULL;
+//     queue->tail = NULL;
+
+//     return queue;
+// }
+
+// void DestructQueue(Queue *queue) {
+//     NODE *pN;
+//     while (!isEmpty(queue)) {
+//         pN = Dequeue(queue);
+//         free(pN);
+//     }
+//     free(queue);
+// }
+
+// int Enqueue(Queue *pQueue, NODE *item) {
+//     /* Bad parameter */
+//     if ((pQueue == NULL) || (item == NULL)) {
+//         return false;
+//     }
+//     // if(pQueue->limit != 0)
+//     if (pQueue->size >= pQueue->limit) {
+//         return false;
+//     }
+//     /*the queue is empty*/
+//     item->prev = NULL;
+//     if (pQueue->size == 0) {
+//         pQueue->head = item;
+//         pQueue->tail = item;
+
+//     } else {
+//         /*adding item to the end of the queue*/
+//         pQueue->tail->prev = item;
+//         pQueue->tail = item;
+//     }
+//     pQueue->size++;
+//     return true;
+// }
+
+// NODE * Dequeue(Queue *pQueue) {
+//     /*the queue is empty or bad param*/
+//     NODE *item;
+//     if (isEmpty(pQueue))
+//         return NULL;
+//     item = pQueue->head;
+//     pQueue->head = (pQueue->head)->prev;
+//     pQueue->size--;
+//     return item;
+// }
+
+// int isEmpty(Queue* pQueue) {
+//     if (pQueue == NULL) {
+//         return false;
+//     }
+//     if (pQueue->size == 0) {
+//         return true;
+//     } else {
+//         return false;
+//     }
+// }
+
+
+
+struct _MultiIndex{
+    int id;
+    int index;
+};
+
+
 int findNumberOfRecord(char* fileName){
     FILE *fp;
     struct _Record rec;
@@ -336,6 +355,35 @@ int findNumberOfRecord(char* fileName){
 }
 
 
+int readFile(char* fileName){
+    FILE *fp;
+    struct _Record rec;
+    struct _MultiIndex multiIndex;
+
+    fp = fopen(fileName,"r");
+
+    int numberOfRecord = findNumberOfRecord(fileName);
+
+
+     int i;
+
+    for (i = 0; i < numberOfRecord; ++i)
+    {
+        fread(&rec, sizeof(struct _Record), 1, fp);
+
+        multiIndex.id = rec.id;
+        multiIndex.index = i;
+
+        printf("%d \n", rec.id);
+
+        //printf("%d \n",i);
+    }
+
+    fclose(fp);
+    return -1;
+}
+
+
 // Function to find how many record can be added to a buffer
 int getNumbOfRecordToAdd(int pageSize){
     // we can find that each record is 64 bit 
@@ -345,28 +393,24 @@ int getNumbOfRecordToAdd(int pageSize){
 
 }
 
-// method to write merged records into output buffer
-void writeMergedRecs(int indexOfBuffer, struct _Record arr_rec[], int sizeOfArray){
+
+// void writeToBuffer(int indexOfBuffer, struct _Record arr_rec[], int sizeOfArray){
    
-    char *fileName = (char*)malloc(11 * sizeof(char));;
-    sprintf(fileName,"%s%d%s","buffer",indexOfBuffer,".bin");
-    //sprintf(fileName,"buffer5.bin",indexOfBuffer);
-    FILE *fp = fopen(fileName, "ab+");
-    fseek(fp,0,SEEK_END);
-    struct _Record rec;
-    if (fp != NULL) {
-        int i;
-        for (i = 0; i < sizeOfArray; i++)
-        {
-            rec = arr_rec[i];   
-            fwrite(&arr_rec[i], sizeof(struct _Record), 1, fp);
-        }
-        fclose(fp);
-    }
-}
+//     char *fileName;
+//     sprintf(fileName,"buffer%d.bin",indexOfBuffer);
+//     FILE *fp = fopen(fileName, "wb");
+//     if (fp != NULL) {
+//         int i=0;
+//         for (i = 0; i < sizeOfArray; i++)
+//         {
+//             fwrite(&arr_rec[i], sizeof(struct _Record), 1, fp);
+//         }
+        
+       
+//         fclose(fp);
+//     }
 
-
-// write records that sorted with replacement sort to buffers
+// }
 void writeRSortedToBuffer(int indexOfBuffer, minHeap* minHeap, int sizeOfHeap){
     char *fileName = (char*)malloc(11 * sizeof(char));;
     sprintf(fileName,"%s%d%s","buffer",indexOfBuffer,".bin");
@@ -389,87 +433,48 @@ void writeRSortedToBuffer(int indexOfBuffer, minHeap* minHeap, int sizeOfHeap){
 }
 
 
-// void readFromABuffer(char* fileName){
-//     FILE *fp = fopen(fileName,"rb");
-//     int pageSize = 8;
-//     int numberOfRecordToAdd = getNumbOfRecordToAdd(pageSize);
-//     struct _Record arr_rec[numberOfRecordToAdd];
-   
-//     fread(&arr_rec, sizeof(struct _Record), numberOfRecordToAdd, fp);
-//     int i = 0;
-//     for ( i = 0; i < numberOfRecordToAdd*2; i++)
-//        printf("%d %s %s %s %d\n",arr_rec[i].id,arr_rec[i].name,arr_rec[i].surname,arr_rec[i].email,arr_rec[i].grade);
 
-//     fclose(fp);
+
+// void writeToBuffer(int indexOfBuffer, minHeap* minHeap, int sizeOfHeap){
+//     char *fileName = (char*)malloc(11 * sizeof(char));;
+//     sprintf(fileName,"%s%d%s","buffer",indexOfBuffer,".bin");
+//     struct _Record rec;
+//     FILE *fp = fopen(fileName, "wb");
+//     if (fp != NULL) {
+//         int i=0;
+//         for (i = 0; i < sizeOfHeap; i++)
+//         {
+            
+//             rec = deleteNode(minHeap);
+//             //printf("%d %s %s %s %d \n",rec.id,rec.name,rec.surname,rec.email,rec.grade);
+//             fwrite(&rec, sizeof(struct _Record), 1, fp);
+//         }
+        
+       
+//         fclose(fp);
+//     }
+
 // }
 
-
-
-//TODO: Number of recordu dinamik hale getir
-void readFromOutputBuffer(char* fileName){
+void readFromABuffer(char* fileName){
     FILE *fp = fopen(fileName,"rb");
     int pageSize = 8;
     int numberOfRecordToAdd = getNumbOfRecordToAdd(pageSize);
-    struct _Record arr_rec[numberOfRecordToAdd*4];
-   
-    fread(&arr_rec, sizeof(struct _Record), numberOfRecordToAdd*4, fp);
-    int i = 0;
-    for ( i = 0; i < numberOfRecordToAdd*4; i++)
-       printf("%d %s %s %s %d\n",arr_rec[i].id,arr_rec[i].name,arr_rec[i].surname,arr_rec[i].email,arr_rec[i].grade);
-
-    fclose(fp);
-}
-
-// read records from a buffer and read them into an array
-void readRecordsIntoArray(struct _Record recordArr[], int startIdx,int lastIdx, FILE *fp){
-    int i;
-    for ( i = startIdx; i < lastIdx; i++)
-        fread(&recordArr[i], sizeof(struct _Record), 1, fp);
-    
-    fclose(fp);
-}
-
-
-//TODO: Dosya bitene kadar okuma yapacak hale getir
-// take two buffer inputs merge and write them into output buffer 
-void mergeBuffers(char* bufferName1, char* bufferName2){
-    
-    int pageSize = 8;
-    int numberOfRecordToAdd = getNumbOfRecordToAdd(pageSize);
     struct _Record arr_rec[numberOfRecordToAdd];
-    FILE *fp = fopen(bufferName1,"rb");
-    // Read first half of first buffer
-    readRecordsIntoArray(arr_rec,0,numberOfRecordToAdd/2,fp);
-    fp = fopen(bufferName2,"rb");
-     // Read first half of second buffer
-    readRecordsIntoArray(arr_rec,numberOfRecordToAdd/2,numberOfRecordToAdd,fp);
-    // merge these records
-    mergeSort(arr_rec,0,numberOfRecordToAdd - 1);
-    // write merged records to output buffer (buffer5)
-    writeMergedRecs(5,arr_rec,numberOfRecordToAdd);
+   
+    fread(&arr_rec, sizeof(struct _Record), numberOfRecordToAdd, fp);
+    int i = 0;
+    for ( i = 0; i < numberOfRecordToAdd; i++)
+    {
+       printf("%d %s %s %s %d\n",arr_rec[i].id,arr_rec[i].name,arr_rec[i].surname,arr_rec[i].email,arr_rec[i].grade);
+    }
 
-    
-    // number of byte to reach second half of buffer
-    int byteToSeek =  sizeof(struct _Record)*((int)numberOfRecordToAdd/2);
-    fp = fopen(bufferName1,"rb");
-    // seek to middle of the first buffer
-    fseek(fp,byteToSeek, SEEK_SET);
-    // read records into array
-    readRecordsIntoArray(arr_rec,0,numberOfRecordToAdd/2,fp);
-    fp = fopen(bufferName2,"rb");
-    // seek to middle of the second buffer
-    fseek(fp,byteToSeek, SEEK_SET);
-    // read records into array
-    readRecordsIntoArray(arr_rec,numberOfRecordToAdd/2,numberOfRecordToAdd,fp);
-    // merge records
-    mergeSort(arr_rec,0,numberOfRecordToAdd - 1);
-    // write merged records to output buffer
-    writeMergedRecs(5,arr_rec,numberOfRecordToAdd);
+    fclose(fp);
     
 }
 
 
-// method to split a csv line
+
 void getSplittedLine(char* line, char* array[]){
     char* splitted;
     splitted = strtok(line, ";");
@@ -480,18 +485,20 @@ void getSplittedLine(char* line, char* array[]){
         //printf("%s ", splitted);//Print out every data read
         splitted = strtok(NULL, ";");
     }
+
 } 
 
-// Method to read splitted csv line into struct record
+
 void readIntoRecord(struct _Record* rec, char* array[]){
     rec->id = atoi(array[0]);
     strcpy(rec->name,array[1]);
     strcpy(rec->surname,array[2]);
     strcpy(rec->email,array[3]);
     rec->grade = atoi(array[4]);
+    //return rec;
 }
 
-// core function does so many things
+
 int readCSV(char* fileName){
     
     FILE *fp = NULL;
@@ -500,10 +507,10 @@ int readCSV(char* fileName){
     bool isFirstLine = true;
     int counter = 0;
     struct _Record rec;
-    //struct _MultiIndex multiIndex;
+    struct _MultiIndex multiIndex;
    
 
-    char *array[5];
+    char *array[4];
 
     int numberOfBuffer = 5;
     int pageSize = 8;
@@ -550,10 +557,10 @@ int readCSV(char* fileName){
             if(counter % numberOfRecordToAdd == 0){
                 //levelorderTraversal(&heap);
                 writeRSortedToBuffer(bufferIndex,&heap,numberOfRecordToAdd);
+                //writeToBuffer(bufferIndex,arr_rec,numberOfRecordToAdd);
                 bufferIndex += 1;
                 if(bufferIndex == 5){
-                    mergeBuffers("buffer1.bin","buffer2.bin");
-                    mergeBuffers("buffer3.bin","buffer4.bin");
+                    // merge files and add to output buffer
                     bufferIndex = 1;
                     break;
                 }
@@ -566,19 +573,112 @@ int readCSV(char* fileName){
     }
 }
 
-int main(){
-    readCSV("students1.csv");
-    readFromOutputBuffer("buffer5.bin");
-    //mergeBuffers("buffer1.bin","buffer2.bin");
-    //readFromOutputBuffer("buffer5.bin");
 
-    return -1;
+
+// function to sort the subsection a[i .. j] of the array a[]
+void merge_sort(int i, int j, int a[], int aux[]) {
+    if (j <= i) {
+        return;     // the subsection is empty or a single element
+    }
+    int mid = (i + j) / 2;
+
+    // left sub-array is a[i .. mid]
+    // right sub-array is a[mid + 1 .. j]
+    
+    merge_sort(i, mid, a, aux);     // sort the left sub-array recursively
+    merge_sort(mid + 1, j, a, aux);     // sort the right sub-array recursively
+
+    int pointer_left = i;       // pointer_left points to the beginning of the left sub-array
+    int pointer_right = mid + 1;        // pointer_right points to the beginning of the right sub-array
+    int k;      // k is the loop counter
+
+    // we loop from i to j to fill each element of the final merged array
+    for (k = i; k <= j; k++) {
+        if (pointer_left == mid + 1) {      // left pointer has reached the limit
+            aux[k] = a[pointer_right];
+            pointer_right++;
+        } else if (pointer_right == j + 1) {        // right pointer has reached the limit
+            aux[k] = a[pointer_left];
+            pointer_left++;
+        } else if (a[pointer_left] < a[pointer_right]) {        // pointer left points to smaller element
+            aux[k] = a[pointer_left];
+            pointer_left++;
+        } else {        // pointer right points to smaller element
+            aux[k] = a[pointer_right];
+            pointer_right++;
+        }
+    }
+
+    for (k = i; k <= j; k++) {      // copy the elements from aux[] to a[]
+        a[k] = aux[k];
+    }
 }
 
 
+int main(){
+
+
+    readCSV("students1.csv");
+    // minHeap heap = initMinHeap();
+    // struct _Record rec;
+    // readFromABuffer("buffer1.bin");
+    // readFromABuffer("buffer2.bin");
+    // readFromABuffer("buffer3.bin");
+    // readFromABuffer("buffer4.bin");
+
+
+
+  
+    //readCSV("students1.csv");
+    // readFromABuffer("buffer1.bin");
+    // readFromABuffer("buffer2.bin");
+    // readFromABuffer("buffer3.bin");
+    // readFromABuffer("buffer4.bin");
+
+    // minHeap minHeap = initMinHeap(50);
+    // struct _Record rec;
+
+    // struct _Record r1, r2, r3, r4, r5, r6;
+
+    // r1.id=3;
+    // r2.id=5;
+    // r3.id=1;
+    // r4.id = 17;
+    // r5.id=4;
+    // r6.id = 33;
+    // node n1,n2,n3,n4,n5,n6;
+
+    // n1.record =r1;
+    // n2.record =r2;
+    // n3.record =r3;
+    // n4.record =r4;
+    // n5.record =r5;
+    // n6.record =r6;
+
+
+    // insertNode(&minHeap,n1);
+    // insertNode(&minHeap,n2);
+    // insertNode(&minHeap,n3);
+    // insertNode(&minHeap,n4);
+    // insertNode(&minHeap,n5);
+    // insertNode(&minHeap,n6);
+  
+
+    // levelorderTraversal(&minHeap);
+
+    // rec = deleteNode(&minHeap);
+    // printf("%d \n",rec.id);
+
+    // levelorderTraversal(&minHeap);
+
+    // rec = deleteNode(&minHeap);
+    // printf("%d \n",rec.id);
 
 
 
 
+    return -1;
+
+}
 
 
