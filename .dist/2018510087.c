@@ -221,105 +221,6 @@ void levelorderTraversal(minHeap *hp) {
         printf("%d %s %s %s %d", hp->elem[i].record.id, hp->elem[i].record.name, hp->elem[i].record.surname, hp->elem[i].record.email, hp->elem[i].record.grade) ;
     }
 }
-//<------------------------------------------QUEUE IMPLEMENTATION-------------------------------------------------------->
-
-
-
-/* a link in the queue, holds the info and point to the next Node*/
-// typedef struct {
-//     int info;
-// } DATA;
-
-// typedef struct Node_t {
-//     struct _Record data;
-//     struct Node_t *prev;
-// } NODE;
-
-// /* the HEAD of the Queue, hold the amount of node's that are in the queue*/
-// typedef struct Queue {
-//     NODE *head;
-//     NODE *tail;
-//     int size;
-//     int limit;
-// } Queue;
-
-// Queue *ConstructQueue(int limit);
-// void DestructQueue(Queue *queue);
-// int Enqueue(Queue *pQueue, NODE *item);
-// NODE *Dequeue(Queue *pQueue);
-// int isEmpty(Queue* pQueue);
-
-// Queue *ConstructQueue(int limit) {
-//     Queue *queue = (Queue*) malloc(sizeof (Queue));
-//     if (queue == NULL) {
-//         return NULL;
-//     }
-//     if (limit <= 0) {
-//         limit = 65535;
-//     }
-//     queue->limit = limit;
-//     queue->size = 0;
-//     queue->head = NULL;
-//     queue->tail = NULL;
-
-//     return queue;
-// }
-
-// void DestructQueue(Queue *queue) {
-//     NODE *pN;
-//     while (!isEmpty(queue)) {
-//         pN = Dequeue(queue);
-//         free(pN);
-//     }
-//     free(queue);
-// }
-
-// int Enqueue(Queue *pQueue, NODE *item) {
-//     /* Bad parameter */
-//     if ((pQueue == NULL) || (item == NULL)) {
-//         return false;
-//     }
-//     // if(pQueue->limit != 0)
-//     if (pQueue->size >= pQueue->limit) {
-//         return false;
-//     }
-//     /*the queue is empty*/
-//     item->prev = NULL;
-//     if (pQueue->size == 0) {
-//         pQueue->head = item;
-//         pQueue->tail = item;
-
-//     } else {
-//         /*adding item to the end of the queue*/
-//         pQueue->tail->prev = item;
-//         pQueue->tail = item;
-//     }
-//     pQueue->size++;
-//     return true;
-// }
-
-// NODE * Dequeue(Queue *pQueue) {
-//     /*the queue is empty or bad param*/
-//     NODE *item;
-//     if (isEmpty(pQueue))
-//         return NULL;
-//     item = pQueue->head;
-//     pQueue->head = (pQueue->head)->prev;
-//     pQueue->size--;
-//     return item;
-// }
-
-// int isEmpty(Queue* pQueue) {
-//     if (pQueue == NULL) {
-//         return false;
-//     }
-//     if (pQueue->size == 0) {
-//         return true;
-//     } else {
-//         return false;
-//     }
-// }
-
 
 //<---------------------------------------- MERGE OPERATIONS ------------------------------------>
 // function to sort the subsection a[i .. j] of the array a[]
@@ -536,21 +437,33 @@ void mergeBuffers(char* bufferName1, char* bufferName2){
     int pageSize = 8;
     int numberOfRecordToAdd = getNumbOfRecordToAdd(pageSize);
     struct _Record arr_rec[numberOfRecordToAdd];
-
     FILE *fp = fopen(bufferName1,"rb");
+    // Read first half of first buffer
     readRecordsIntoArray(arr_rec,0,numberOfRecordToAdd/2,fp);
     fp = fopen(bufferName2,"rb");
+     // Read first half of second buffer
     readRecordsIntoArray(arr_rec,numberOfRecordToAdd/2,numberOfRecordToAdd,fp);
+    // merge these records
     mergeSort(arr_rec,0,numberOfRecordToAdd - 1);
+    // write merged records to output buffer (buffer5)
     writeMergedRecs(5,arr_rec,numberOfRecordToAdd,0);
 
+    
+    // number of byte to reach second half of buffer
+    int byteToSeek =  sizeof(struct _Record)*((int)numberOfRecordToAdd/2);
     fp = fopen(bufferName1,"rb");
-    fseek(fp, sizeof(struct _Record)*((int)numberOfRecordToAdd/2), SEEK_SET);
+    // seek to middle of the first buffer
+    fseek(fp,byteToSeek, SEEK_SET);
+    // read records into array
     readRecordsIntoArray(arr_rec,0,numberOfRecordToAdd/2,fp);
     fp = fopen(bufferName2,"rb");
-    fseek(fp, sizeof(struct _Record)*((int)numberOfRecordToAdd/2), SEEK_SET);
+    // seek to middle of the second buffer
+    fseek(fp,byteToSeek, SEEK_SET);
+    // read records into array
     readRecordsIntoArray(arr_rec,numberOfRecordToAdd/2,numberOfRecordToAdd,fp);
+    // merge records
     mergeSort(arr_rec,0,numberOfRecordToAdd - 1);
+    // write merged records to output buffer
     writeMergedRecs(5,arr_rec,numberOfRecordToAdd,sizeof(struct _Record)*((int)numberOfRecordToAdd));
     
 }
