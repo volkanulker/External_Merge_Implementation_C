@@ -373,8 +373,8 @@ void writeRSortedToBuffer(int indexOfBuffer, minHeap* minHeap, int sizeOfHeap){
     struct _Record rec;
     FILE *fp = fopen(fileName, "wb");
     if (fp != NULL) {
-        int i=0;
-        for (i = 0; i < sizeOfHeap; i++)
+        int i;
+        for (i = 0; i < sizeOfHeap ; i++)
         {
             
             rec = deleteNode(minHeap);
@@ -405,20 +405,7 @@ void writeRSortedToBuffer(int indexOfBuffer, minHeap* minHeap, int sizeOfHeap){
 
 
 
-//TODO: Number of recordu dinamik hale getir
-void readFromOutputBuffer(char* fileName){
-    FILE *fp = fopen(fileName,"rb");
-    int pageSize = 8;
-    int numberOfRecordToAdd = getNumbOfRecordToAdd(pageSize);
-    struct _Record arr_rec[numberOfRecordToAdd*4];
-   
-    fread(&arr_rec, sizeof(struct _Record), numberOfRecordToAdd*4, fp);
-    int i = 0;
-    for ( i = 0; i < numberOfRecordToAdd*4; i++)
-       printf("%d %s %s %s %d\n",arr_rec[i].id,arr_rec[i].name,arr_rec[i].surname,arr_rec[i].email,arr_rec[i].grade);
 
-    fclose(fp);
-}
 
 // read records from a buffer and read them into an array
 void readRecordsIntoArray(struct _Record recordArr[], int startIdx,int lastIdx, FILE *fp){
@@ -491,6 +478,102 @@ void readIntoRecord(struct _Record* rec, char* array[]){
     rec->grade = atoi(array[4]);
 }
 
+
+//TODO: Number of recordu dinamik hale getir
+void readFromOutputBuffer(char* fileName){
+
+    struct _Record rec;
+    FILE *fp = fopen(fileName, "rb");
+    fseek(fp,0,SEEK_END);
+    int sizeOfRecord = sizeof(struct _Record);
+    int numberOfByte = ftell(fp);
+    fseek(fp,0,SEEK_SET);
+    int numbOfRecord = numberOfByte / sizeOfRecord;
+    printf("%d",numbOfRecord);
+    // int i;
+    // for (i = 0; i < numbOfRecord; i++)
+    // {
+    //     fread(&rec,sizeOfRecord,1,fp);
+    //     printf("%d %s %s %s %d %d\n",rec.id,rec.name,rec.surname,rec.email,rec.grade,i);
+    // }
+    fclose(fp);
+}
+
+// Merges k sorted files. Names of files are assumed
+// to be 1, 2, 3, ... k
+// void mergeFiles(char* output_file, int n, int k)
+// {
+//     FILE* in[k];
+//     for (int i = 0; i < k; i++) {
+//         char fileName[2];
+  
+//         // convert i to string
+//         snprintf(fileName, sizeof(fileName),
+//                  "%d", i);
+  
+//         // Open output files in read mode.
+//         in[i] = openFile(fileName, "r");
+//     }
+  
+//     // FINAL OUTPUT FILE
+//     FILE* out = openFile(output_file, "w");
+  
+//     // Create a min heap with k heap
+//     // nodes. Every heap node
+//     // has first element of scratch
+//     // output file
+//     MinHeapNode* harr = new MinHeapNode[k];
+//     int i;
+//     for (i = 0; i < k; i++) {
+//         // break if no output file is empty and
+//         // index i will be no. of input files
+//         if (fscanf(in[i], "%d ", &harr[i].element) != 1)
+//             break;
+  
+//         // Index of scratch output file
+//         harr[i].i = i;
+//     }
+//     // Create the heap
+//     MinHeap hp(harr, i);
+  
+//     int count = 0;
+  
+//     // Now one by one get the
+//     // minimum element from min
+//     // heap and replace it with
+//     // next element.
+//     // run till all filled input
+//     // files reach EOF
+//     while (count != i) {
+//         // Get the minimum element
+//         // and store it in output file
+//         MinHeapNode root = hp.getMin();
+//         fprintf(out, "%d ", root.element);
+  
+//         // Find the next element that
+//         // will replace current
+//         // root of heap. The next element
+//         // belongs to same
+//         // input file as the current min element.
+//         if (fscanf(in[root.i], "%d ",&root.element)!= 1) {
+//             root.element = INT_MAX;
+//             count++;
+//         }
+  
+//         // Replace root with next
+//         // element of input file
+//         hp.replaceMin(root);
+//     }
+  
+//     // close input and output files
+//     for (int i = 0; i < k; i++)
+//         fclose(in[i]);
+  
+//     fclose(out);
+// }
+
+
+
 // core function does so many things
 int readCSV(char* fileName){
     
@@ -502,9 +585,7 @@ int readCSV(char* fileName){
     struct _Record rec;
     //struct _MultiIndex multiIndex;
    
-
     char *array[5];
-
     int numberOfBuffer = 5;
     int pageSize = 8;
     int bufferIndex = 1;
@@ -512,8 +593,6 @@ int readCSV(char* fileName){
     struct _Record arr_rec[numberOfRecordToAdd];
 
     minHeap heap = initMinHeap(numberOfRecordToAdd);
-    
-
 	if ((fp = fopen(fileName, "at+")) != NULL)
 	{
 		 while ((line = fgets(lineBuffer, sizeof(lineBuffer), fp))!=NULL)//The loop continues when the end of the file is not read
@@ -536,26 +615,30 @@ int readCSV(char* fileName){
             //rec = readIntoRecord(rec,array);
 
             // Create record array
-            arr_rec[counter % numberOfRecordToAdd] = rec;
+            //arr_rec[counter % (numberOfRecordToAdd)] = rec;
             // Create multi index
             // multiIndex.id = rec.id;
             // multiIndex.index = counter;
 
             //<----------- Replacement Selection Sort -------------->
             // create node for heap
+            
             struct node node;
             node.record = rec;
             insertNode(&heap,node);
             counter += 1;
-            if(counter % numberOfRecordToAdd == 0){
+            
+            if(counter % (numberOfRecordToAdd) == 0){
+                counter = 0;
+                //printf("%d\n",numberOfRecordToAdd);
                 //levelorderTraversal(&heap);
+                
                 writeRSortedToBuffer(bufferIndex,&heap,numberOfRecordToAdd);
                 bufferIndex += 1;
                 if(bufferIndex == 5){
                     mergeBuffers("buffer1.bin","buffer2.bin");
                     mergeBuffers("buffer3.bin","buffer4.bin");
-                    bufferIndex = 1;
-                    break;
+                    bufferIndex = 1;     
                 }
             }  
             //printf("%d %s %s %s %d",rec.id,rec.name,rec.surname,rec.email,rec.grade);
@@ -567,8 +650,10 @@ int readCSV(char* fileName){
 }
 
 int main(){
-    readCSV("students1.csv");
+    //readCSV("students.csv");
     readFromOutputBuffer("buffer5.bin");
+    
+    //readFromOutputBuffer("buffer5.bin");
     //mergeBuffers("buffer1.bin","buffer2.bin");
     //readFromOutputBuffer("buffer5.bin");
 
