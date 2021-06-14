@@ -167,74 +167,8 @@ void deleteMinHeap(minHeap *hp) {
     free(hp->elem) ;
 }
 
-//<------------------------------------------- MERGE SORT IMPLEMENTATION -------------------------------------------->
-// function to sort the subsection a[i .. j] of the array a[]
-// Merges two subarrays of arr[].
-// First subarray is arr[l..m]
-// Second subarray is arr[m+1..r]
-void merge(struct _Record recordArr[], int l, int m, int r)
-{
-    int i, j, k;
-    int n1 = m - l + 1;
-    int n2 = r - m;
- 
-    /* create temp arrays */
-    struct _Record L[n1], R[n2];
- 
-    /* Copy data to temp arrays L[] and R[] */
-    for (i = 0; i < n1; i++)
-        L[i] = recordArr[l + i];
-    for (j = 0; j < n2; j++)
-        R[j] = recordArr[m + 1 + j];
- 
-    /* Merge the temp arrays back into arr[l..r]*/
-    i = 0; // Initial index of first subarray
-    j = 0; // Initial index of second subarray
-    k = l; // Initial index of merged subarray
-    while (i < n1 && j < n2) {
-        if (L[i].id <= R[j].id) {
-            recordArr[k] = L[i];
-            i++;
-        }
-        else {
-            recordArr[k] = R[j];
-            j++;
-        }
-        k++;
-    }
- 
-    /* Copy the remaining elements of L[], if there
-    are any */
-    while (i < n1) {
-        recordArr[k] = L[i];
-        i++;
-        k++;
-    }
- 
-    /* Copy the remaining elements of R[], if there
-    are any */
-    while (j < n2) {
-        recordArr[k] = R[j];
-        j++;
-        k++;
-    }
-}
- 
-/* l is for left index and r is right index of the
-sub-array of arr to be sorted */
-void mergeSort(struct _Record recordArr[], int l, int r)
-{
-    if (l < r) {
-        // Same as (l+r)/2, but avoids overflow for
-        // large l and h
-        int m = l + (r - l) / 2;
- 
-        // Sort first and second halves
-        mergeSort(recordArr, l, m);
-        mergeSort(recordArr, m + 1, r);
-        merge(recordArr, l, m, r);
-    }
-}
+
+//<---------------------------------------------------------------------------------------->
 
 // Function to find how many record can be added to a buffer
 int getNumbOfRecordToAdd(int pageSize){
@@ -516,7 +450,7 @@ int main(){
     char outputFile[1024];
     int numberOfBuffer;
     int pageSize;
-    printf("Enter four inputs, separated by spaces: ");
+    printf("Enter input line: ");
     if(scanf("%1023s %1023s B=%d P=%d", inputFile,outputFile,&numberOfBuffer,&pageSize) != 4){
         fputs("read error\n", stderr);
         return 1;
