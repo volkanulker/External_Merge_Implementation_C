@@ -535,18 +535,21 @@ bool areFilesClosed(FILE* filePointers[],int sizeOfPointerArr){
     return true;
 }
 
-void externalMerge(int numberOfFile){
+void createChunk(int numberOfFile,int indexOfChunk){
     FILE* filePointers[numberOfFile];
-    
     char *fileName = (char*)malloc(12 * sizeof(char));
-    FILE *outputFile=fopen("output.bin","wb");
+
+    char *outputFileName = (char*)malloc(12 * sizeof(char));
+    sprintf(outputFileName,"%s%d%s","chunk",indexOfChunk,".bin");
+    
+    FILE *outputFile=fopen(outputFileName,"wb");
     struct _Record rec;
     struct node recNode;
     // open files to merge
     int i;
     for (i = 0; i < numberOfFile; i++)
     {
-        sprintf(fileName,"%s%d%s","chunk",i,".bin");
+        sprintf(fileName,"%s%d%s","buffer",i,".bin");
         filePointers[i]= fopen(fileName,"rb");
     }
 
@@ -581,15 +584,74 @@ void externalMerge(int numberOfFile){
         recArr[fileIdx] = rec;
         insertNode(&heap,recNode);
         ctr += 1;
-        printf("%d %s %s %s %d ctr:%d IDX:%d\n",deletedRec.id,deletedRec.name,deletedRec.surname,deletedRec.email,deletedRec.grade,ctr,fileIdx);
+        fwrite(&deletedRec,sizeof(struct _Record),1,outputFile);
+        //printf("%d %s %s %s %d ctr:%d IDX:%d\n",deletedRec.id,deletedRec.name,deletedRec.surname,deletedRec.email,deletedRec.grade,ctr,fileIdx);
     }
     
     fclose(outputFile);
 }
 
 
+void createSortedFile(int numberOfChunk,char* OutputFileName){
+    FILE* filePointers[numberOfChunk];
+    char *fileName = (char*)malloc(12 * sizeof(char));
+
+    FILE *outputFile=fopen(OutputFileName,"w");
+    struct _Record rec;
+    struct node recNode;
+    // open files to merge
+    int i;
+    for (i = 0; i < numberOfChunk; i++)
+    {
+        sprintf(fileName,"%s%d%s","chunk",i,".bin");
+        filePointers[i]= fopen(fileName,"rb");
+    }
+
+    minHeap heap = initMinHeap();
+    struct _Record recArr[numberOfChunk];
+    struct _Record deletedRec;
+    int fileIdx;
+    // insert record into heap one by one from files
+    int k;
+    for (k = 0; k < numberOfChunk; k++)
+    {
+        fread(&rec,sizeof(struct _Record),1,filePointers[k]);
+        recNode.record = rec;
+        recArr[k] = rec;
+        insertNode(&heap,recNode);  
+    }
+
+    // add record into heap and write min to output sorted file
+    //until all files are sorted
+    int ctr=0;
+    char* fileNameToRemove= (char*)malloc(12 * sizeof(char));
+    while ( !areFilesClosed(filePointers,numberOfChunk))
+    {
+        deletedRec = deleteNode(&heap);
+        fileIdx=findWhichFile(recArr,deletedRec,numberOfChunk);
+        // check if file pointer points end of the file
+        if(fread(&rec,sizeof(struct _Record),1,filePointers[fileIdx]) == 0){
+            rec.id = INT_MAX;
+            sprintf(fileNameToRemove,"%s%d%s","chunk",fileIdx,".bin");
+            // close and remove merged chunks
+            fclose(filePointers[fileIdx]);
+            remove(fileNameToRemove);
+            //printf("%s %s \n",fileNameToRemove,"is merged and removed.");
+            filePointers[fileIdx] = NULL;
+        } 
+        recNode.record = rec;
+        recArr[fileIdx] = rec;
+        insertNode(&heap,recNode);
+        ctr += 1;
+        fprintf(outputFile, "%d %s %s %s %d\n", deletedRec.id, deletedRec.name, deletedRec.surname,deletedRec.email,deletedRec.grade);
+        //fwrite(&deletedRec,sizeof(struct _Record),1,outputFile);
+        //printf("%d %s %s %s %d ctr:%d IDX:%d\n",deletedRec.id,deletedRec.name,deletedRec.surname,deletedRec.email,deletedRec.grade,ctr,fileIdx);
+    }
+    
+    fclose(outputFile);
+}
 // core function does so many things
-int readCSV(char* fileName){
+int readCSV(char* fileName,char* outputFileName, int numberOfBuffer, int pageSize){
     
     FILE *fp = NULL;
 	char *line;
@@ -599,11 +661,12 @@ int readCSV(char* fileName){
     struct _Record rec;
    
     char *array[5];
-    int numberOfBuffer = 5;
-    int pageSize = 8;
+    // int numberOfBuffer = 5;
+    // int pageSize = 8;
     int bufferIndex = 0;
     int numberOfRecordToAdd = getNumbOfRecordToAdd(pageSize);
     struct _Record arr_rec[numberOfRecordToAdd];
+    int chunkIdx=0;
 
     minHeap heap = initMinHeap(numberOfRecordToAdd);
 	if ((fp = fopen(fileName, "at+")) != NULL)
@@ -632,14 +695,11 @@ int readCSV(char* fileName){
             
             if(counter % (numberOfRecordToAdd) == 0){
                 counter = 0;
-                //printf("%d\n",numberOfRecordToAdd);
-                //levelorderTraversal(&heap);
-                
                 writeRSortedToBuffer(bufferIndex,&heap,numberOfRecordToAdd);
                 bufferIndex += 1;
-                if(bufferIndex == 4){
-                    mergeBuffers("buffer0.bin","buffer1.bin",0);
-                    mergeBuffers("buffer2.bin","buffer3.bin",1);
+                if(bufferIndex == numberOfBuffer){
+                    createChunk(numberOfBuffer,chunkIdx);
+                    chunkIdx += 1;
                     bufferIndex = 0;     
                 }
             }  
@@ -648,36 +708,11 @@ int readCSV(char* fileName){
 		 }
 		fclose(fp);
 		fp = NULL;
+        createSortedFile(chunkIdx,outputFileName);
     }
 }
 
 int main(){
-    readCSV("students1.csv");
-    externalMerge(2);
-    //readFromOutputBuffer("chunk2.bin");
-    //readFromOutputBuffer("output.bin");
-    //readFromOutputBuffer("sortedFile.bin");
-    //readCSV("students.csv");
-    // readFromOutputBuffer("buffer0.bin");
-    // readFromOutputBuffer("buffer1.bin");
-    // readFromOutputBuffer("buffer2.bin");
-    // readFromOutputBuffer("buffer3.bin");
-    //readFromOutputBuffer("chunk1.bin");
-    // readFromOutputBuffer("chunk2.bin");
-   
-    //readFromOutputBuffer("chunk1.bin");
-    
-    //readFromOutputBuffer("buffer5.bin");
-    //mergeBuffers("buffer1.bin","buffer2.bin");
-    //readFromOutputBuffer("buffer5.bin");
-
+    readCSV("students.csv","sortedFile.txt",5,32);
     return -1;
 }
-
-
-
-
-
-
-
-
