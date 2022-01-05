@@ -1,1 +1,1 @@
-This is an assignment for the data organization course.
+This is an assignment for the Data Organization and Management course.
